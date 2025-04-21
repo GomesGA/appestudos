@@ -25,5 +25,8 @@ fun AppNavigation() {
         composable("createGroup") {
             CreateGroupScreen(navController)
         }
+        composable("map") {
+            MapScreen(navController)
+        }
     }
 } 
