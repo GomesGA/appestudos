@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,13 +57,11 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.appestudos.ui.theme.NationalParkFamily
 
-
-
 @Composable
 fun login(navController: NavController) {
     val context = LocalContext.current
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
-
+    val dbHelper = remember { UserDatabaseHelper(context) }
 
     Column(
         Modifier
@@ -251,8 +250,6 @@ fun login(navController: NavController) {
                     )
                 }
 
-
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -351,11 +348,16 @@ fun login(navController: NavController) {
                 Button(
                     onClick = {
                         if (text.isEmpty() || text2.isEmpty()) {
-                        Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(context, "Login Realizado com sucesso", Toast.LENGTH_SHORT).show()
-                        navController.navigate("intro")
-                    }},
+                            Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
+                        } else {
+                            if (dbHelper.checkUser(text, text2)) {
+                                Toast.makeText(context, "Login Realizado com sucesso", Toast.LENGTH_SHORT).show()
+                                navController.navigate("intro")
+                            } else {
+                                Toast.makeText(context, "Usuário ou senha incorretos", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
                     modifier = Modifier
                         .padding(top = 10.dp, bottom = 16.dp)
                         .fillMaxWidth()

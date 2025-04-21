@@ -2,14 +2,19 @@ package com.example.appestudos
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.DesktopWindows
+import androidx.compose.material.icons.filled.DeveloperMode
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
@@ -21,23 +26,47 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+
+data class Flashcard(
+    val id: Int,
+    val title: String,
+    val icon: ImageVector,
+    val isPublic: Boolean
+)
 
 @Composable
 fun intro(navController: NavController) {
     val context = LocalContext.current
-
     val scaffoldState = rememberScaffoldState()
+    
+    // Sample flashcards
+    val publicFlashcards = remember {
+        listOf(
+            Flashcard(1, "Programação", Icons.Filled.Code, true),
+            Flashcard(2, "Matemática", Icons.Filled.DesktopWindows, true),
+            Flashcard(3, "Ciências", Icons.Filled.DeveloperMode, true),
+            Flashcard(4, "História", Icons.Filled.Code, true)
+        )
+    }
+    
+    val privateFlashcards = remember {
+        listOf(
+            Flashcard(5, "Inglês", Icons.Filled.Code, false),
+            Flashcard(6, "Espanhol", Icons.Filled.DesktopWindows, false)
+        )
+    }
 
     Scaffold (bottomBar = {
         MyButtonBar()
     }, floatingActionButton = {
         FloatingActionButton(
-            onClick = { /*Todo*/ },
+            onClick = { navController.navigate("createGroup") },
             contentColor = Color.White,
             backgroundColor = Color.Black)
         {
@@ -58,6 +87,10 @@ fun intro(navController: NavController) {
                 .padding(paddingValues = it)
         ){
             NameProfile()
+            Publicos()
+            FlashcardList(flashcards = publicFlashcards, isPublic = true)
+            Privados()
+            FlashcardList(flashcards = privateFlashcards, isPublic = false)
         }
     }
 }
@@ -89,6 +122,99 @@ fun NameProfile(){
 
         )
     }
+}
+
+@Composable
+fun Publicos(){
+
+    Text("Flashcard Públicos",
+        color = Color.Black,
+        fontSize = 26.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
+    )
+
+}
+
+@Composable
+fun FlashcardList(flashcards: List<Flashcard>, isPublic: Boolean) {
+    val showAll = remember { mutableStateOf(false) }
+    val displayedFlashcards = if (showAll.value) flashcards else flashcards.take(4)
+    
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            displayedFlashcards.forEach { flashcard ->
+                FlashcardItem(flashcard = flashcard)
+            }
+        }
+        
+        if (flashcards.size > 4 && !showAll.value) {
+            Button(
+                onClick = { showAll.value = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color.Black)
+            ) {
+                Text(
+                    text = "Ver mais flashcards ${if (isPublic) "públicos" else "privados"}",
+                    color = Color.White
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun FlashcardItem(flashcard: Flashcard) {
+    Column (
+        modifier = Modifier
+            .height(170.dp)
+            .padding(end = 12.dp)
+            .background(
+                color = Color.Black,
+                shape = RoundedCornerShape(20.dp)
+            )
+            .padding(top=16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = flashcard.icon,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier
+                .height(65.dp)
+                .width(65.dp)
+        )
+        Text(
+            text = flashcard.title,
+            fontSize = 18.sp,
+            modifier = Modifier.padding(top = 12.dp),
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
+    }
+}
+
+@Composable
+fun Privados(){
+
+    Text("Flashcard Privados",
+        color = Color.Black,
+        fontSize = 26.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
+    )
 }
 
 @Composable

@@ -22,5 +22,8 @@ fun AppNavigation() {
         composable("intro") {
             intro(navController)
         }
+        composable("createGroup") {
+            CreateGroupScreen(navController)
+        }
     }
 } 

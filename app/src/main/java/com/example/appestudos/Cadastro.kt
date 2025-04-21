@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -50,6 +51,7 @@ fun cadastro(navController: NavController) {
     val context = LocalContext.current
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     var passwordVisible1 by rememberSaveable { mutableStateOf(false) }
+    val dbHelper = remember { UserDatabaseHelper(context) }
 
     Column(
         Modifier
@@ -225,9 +227,15 @@ fun cadastro(navController: NavController) {
                             Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
                         } else if (text2 != text3) {
                             Toast.makeText(context, "As senhas não coincidem", Toast.LENGTH_SHORT).show()
+                        } else if (dbHelper.checkUsernameExists(text)) {
+                            Toast.makeText(context, "Nome de usuário já existe", Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(context, "Cadastro Criado", Toast.LENGTH_SHORT).show()
-                            navController.navigate("login")
+                            if (dbHelper.addUser(text, text2)) {
+                                Toast.makeText(context, "Cadastro Criado com sucesso", Toast.LENGTH_SHORT).show()
+                                navController.navigate("login")
+                            } else {
+                                Toast.makeText(context, "Erro ao criar cadastro", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     },
                     modifier = Modifier

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,9 +47,9 @@ import com.example.appestudos.ui.theme.NationalParkFamily
 @Composable
 fun esenha(navController: NavController) {
     val context = LocalContext.current
-
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     var passwordVisible1 by rememberSaveable { mutableStateOf(false) }
+    val dbHelper = remember { UserDatabaseHelper(context) }
 
     Column(
         Modifier
@@ -224,10 +225,17 @@ fun esenha(navController: NavController) {
                             Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
                         } else if (text2 != text3) {
                             Toast.makeText(context, "As senhas não coincidem", Toast.LENGTH_SHORT).show()
+                        } else if (!dbHelper.checkUsernameExists(text)) {
+                            Toast.makeText(context, "Usuário não encontrado", Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(context, "Cadastro Criado", Toast.LENGTH_SHORT).show()
-                            navController.navigate("login")
-                        }},
+                            if (dbHelper.updatePassword(text, text2)) {
+                                Toast.makeText(context, "Senha alterada com sucesso", Toast.LENGTH_SHORT).show()
+                                navController.navigate("login")
+                            } else {
+                                Toast.makeText(context, "Erro ao alterar senha", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
                     modifier = Modifier
                         .padding(top = 16.dp, bottom = 16.dp)
                         .fillMaxWidth()
