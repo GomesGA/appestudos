@@ -99,13 +99,13 @@ fun MapScreen(navController: NavController) {
             null
         }
     }
-
+    
     // Estado para armazenar a localização atual
     var currentLocation by remember { mutableStateOf<LatLng?>(null) }
-
+    
     // Estado para controlar se o mapa deve seguir a localização do usuário
     var isFollowingUser by remember { mutableStateOf(true) }
-
+    
     // Estado para permissões
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -208,31 +208,50 @@ fun MapScreen(navController: NavController) {
         }
     }
 
-    // Função auxiliar para realizar pesquisa
-    fun performSearch(query: String, onResult: (List<AutocompletePrediction>, String?) -> Unit) {
+    // Função para realizar a pesquisa
+    val performSearch = { query: String ->
         if (query.isNotEmpty() && placesClient != null) {
+            isSearching = true
+            errorMessage = null
+            println("Iniciando pesquisa para: $query")
+
             try {
                 val request = FindAutocompletePredictionsRequest.builder()
                     .setQuery(query)
                     .setCountries("BR")
                     .build()
 
-                placesClient.findAutocompletePredictions(request)
+                placesClient?.findAutocompletePredictions(request)
                     ?.addOnSuccessListener { response ->
-                        onResult(response.autocompletePredictions, null)
+                        val predictions = response.autocompletePredictions
+                        println("Sugestões recebidas: ${predictions.size}")
+                        predictions.forEach { prediction ->
+                            println("Sugestão: ${prediction.getFullText(null)}")
+                        }
+                        searchResults = predictions
+                        isSearching = false
                     }
                     ?.addOnFailureListener { exception ->
-                        onResult(emptyList(), "Erro na busca: ${exception.message}")
+                        println("Erro na busca: ${exception.message}")
+                        println("Stack trace: ${exception.stackTraceToString()}")
+                        errorMessage = "Erro na busca: ${exception.message}"
+                        searchResults = emptyList()
+                        isSearching = false
                     }
             } catch (e: Exception) {
-                onResult(emptyList(), "Erro: ${e.message}")
+                println("Exceção ao fazer a busca: ${e.message}")
+                println("Stack trace: ${e.stackTraceToString()}")
+                errorMessage = "Erro: ${e.message}"
+                searchResults = emptyList()
+                isSearching = false
             }
         } else {
             if (placesClient == null) {
-                onResult(emptyList(), "Serviço de busca não está disponível")
-            } else {
-                onResult(emptyList(), null)
+                println("Places Client não está inicializado")
+                errorMessage = "Serviço de busca não está disponível"
             }
+            searchResults = emptyList()
+            isSearching = false
         }
     }
 
@@ -306,6 +325,8 @@ fun MapScreen(navController: NavController) {
             cameraPositionState = cameraPositionState,
             properties = properties,
             uiSettings = uiSettings,
+            onMapClick = { isFollowingUser = false }
+        )
             onMapClick = { latLng -> 
                 isFollowingUser = false
                 if (isSelectingLocation) {
@@ -473,7 +494,7 @@ fun MapScreen(navController: NavController) {
                                         )
                                     }
                                 }
-                                
+
                                 // Botão de adicionar aos favoritos
                                 IconButton(
                                     onClick = {
@@ -591,7 +612,7 @@ fun MapScreen(navController: NavController) {
 
         // Botão para adicionar nova localização favorita
         FloatingActionButton(
-            onClick = { 
+            onClick = {
                 if (favoriteLocations.size >= 7) {
                     // Mostrar mensagem de limite atingido
                     Toast.makeText(context, "Limite de 7 localizações favoritas atingido", Toast.LENGTH_SHORT).show()
@@ -696,7 +717,7 @@ fun MapScreen(navController: NavController) {
                                 )
                             }
                         }
-                        
+
                         if (favoriteLocations.isEmpty()) {
                             Text(
                                 text = "Nenhuma localização favorita adicionada",
@@ -724,7 +745,7 @@ fun MapScreen(navController: NavController) {
                                                 color = Color.Gray
                                             )
                                         }
-                                        
+
                                         // Botão de editar
                                         IconButton(
                                             onClick = {
@@ -739,7 +760,7 @@ fun MapScreen(navController: NavController) {
                                                 tint = Color.Blue
                                             )
                                         }
-                                        
+
                                         IconButton(
                                             onClick = {
                                                 scope.launch {
@@ -761,7 +782,7 @@ fun MapScreen(navController: NavController) {
                                                 tint = Color.Blue
                                             )
                                         }
-                                        
+
                                         IconButton(
                                             onClick = { removeFavoriteLocation(favorite.id) }
                                         ) {
@@ -786,7 +807,7 @@ fun MapScreen(navController: NavController) {
         // Diálogo para adicionar localização favorita
         if (showAddFavoriteDialog) {
             AlertDialog(
-                onDismissRequest = { 
+                onDismissRequest = {
                     showAddFavoriteDialog = false
                     newFavoriteName = ""
                     selectedLocation = null
@@ -852,7 +873,7 @@ fun MapScreen(navController: NavController) {
                 },
                 dismissButton = {
                     TextButton(
-                        onClick = { 
+                        onClick = {
                             showAddFavoriteDialog = false
                             newFavoriteName = ""
                             selectedLocation = null
@@ -886,7 +907,7 @@ fun MapScreen(navController: NavController) {
         // Diálogo de edição
         if (showEditDialog) {
             AlertDialog(
-                onDismissRequest = { 
+                onDismissRequest = {
                     showEditDialog = false
                     editingLocation = null
                     editingName = ""
@@ -905,13 +926,13 @@ fun MapScreen(navController: NavController) {
                             label = { Text("Nome da localização") },
                             modifier = Modifier.fillMaxWidth()
                         )
-                        
+
                         Spacer(modifier = Modifier.height(16.dp))
-                        
+
                         // Campo de pesquisa
                         TextField(
                             value = editSearchQuery,
-                            onValueChange = { newValue -> 
+                            onValueChange = { newValue ->
                                 editSearchQuery = newValue
                                 performSearch(newValue) { predictions, error ->
                                     editSearchResults = predictions
@@ -930,7 +951,7 @@ fun MapScreen(navController: NavController) {
                             trailingIcon = if (editSearchQuery.isNotEmpty()) {
                                 {
                                     IconButton(
-                                        onClick = { 
+                                        onClick = {
                                             editSearchQuery = ""
                                             editSearchResults = emptyList()
                                             editErrorMessage = null
@@ -1078,7 +1099,7 @@ fun MapScreen(navController: NavController) {
                 },
                 dismissButton = {
                     TextButton(
-                        onClick = { 
+                        onClick = {
                             showEditDialog = false
                             editingLocation = null
                             editingName = ""
