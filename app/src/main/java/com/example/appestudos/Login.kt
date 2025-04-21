@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
@@ -39,9 +40,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,6 +55,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.appestudos.ui.theme.NationalParkFamily
+
 
 
 @Composable
@@ -168,26 +175,84 @@ fun login(navController: NavController) {
                         .background(Color.White, RoundedCornerShape(10.dp))
                 )
 
-                Text(
-                    text = "Não tem uma conta? Inscreva-se",
-                    fontSize = 14.sp,
-                    modifier = Modifier
-                        .padding(top = 24.dp)
-                        .fillMaxWidth()
-                        .clickable { navController.navigate("cadastro") },
-                    textAlign = TextAlign.Center,
-                    color = Color(android.graphics.Color.parseColor("#5E5E5E"))
-                )
+                val annotatedText = buildAnnotatedString {
+                    append("Não tem uma conta? ")
 
-                Text(
-                    text = "Esqueceu a sua Senha ?", fontSize = 14.sp,
+                    // Marca a parte clicável ("Inscreva-se")
+                    pushStringAnnotation(tag = "SIGNUP", annotation = "cadastro")
+                    withStyle(
+                        style = SpanStyle(
+                            color = Color(0xFF007BFF), // Azul (cor de link)
+                            fontWeight = FontWeight.Medium,
+                            textDecoration = TextDecoration.Underline
+                        )
+                    ) {
+                        append("Inscreva-se")
+                    }
+                    pop()
+                }
+                Box(
                     modifier = Modifier
-                        .padding(top = 24.dp)
                         .fillMaxWidth()
-                        .clickable { navController.navigate("esenha") },
-                    textAlign = TextAlign.Center,
-                    color = Color(android.graphics.Color.parseColor("#5E5E5E"))
+                        .padding(top = 2.dp),
+                    contentAlignment = Alignment.Center
                 )
+                    {
+                        ClickableText(
+                            text = annotatedText,
+                            modifier = Modifier
+                                .padding(top = 24.dp)
+                                .fillMaxWidth(),
+                            style = TextStyle(
+                                fontSize = 14.sp,
+                                textAlign = TextAlign.Center,
+                                color = Color(android.graphics.Color.parseColor("#5E5E5E"))
+                            ),
+                            onTextLayout = { textLayoutResult ->
+                            },
+                            onClick = { offset ->
+                                annotatedText.getStringAnnotations("SIGNUP", offset, offset)
+                                    .firstOrNull()
+                                    ?.let { navController.navigate("cadastro") }
+                            }
+                        )
+                    }
+
+                val forgotPasswordText = buildAnnotatedString {
+                    // Define toda a frase como clicável (ou pode marcar apenas parte)
+                    pushStringAnnotation(tag = "FORGOT_PW", annotation = "esenha")
+                    withStyle(
+                        style = SpanStyle(
+                            color = Color(0xFF5E5E5E), // Mesma cor do texto original
+                        )
+                    ) {
+                        append("Esqueceu a sua senha?")
+                    }
+                    pop()
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ClickableText(
+                        text = forgotPasswordText,
+                        style = TextStyle(
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center
+                        ),
+                        onClick = { offset ->
+                            forgotPasswordText.getStringAnnotations("FORGOT_PW", offset, offset)
+                                .firstOrNull()
+                                ?.let { navController.navigate("esenha") }
+                        }
+                    )
+                }
+
+
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
