@@ -1,6 +1,7 @@
 package com.example.appestudos
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -31,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -42,7 +44,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import com.example.appestudos.ui.theme.lobsterTwoFontFamily
+import com.example.appestudos.ui.theme.NationalParkFamily
 
 
 class MainActivity : ComponentActivity() {
@@ -59,6 +61,8 @@ class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 fun login() {
+    val context = LocalContext.current
+    
     Column(
         Modifier
             .fillMaxSize()
@@ -83,9 +87,9 @@ fun login() {
                         linkTo(parent.top, culm.top, bias = 0.6f)
                         linkTo(parent.start,parent.end, bias = 0f)
                     },
-                fontSize = 30.sp,
+                fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
-                fontFamily = lobsterTwoFontFamily
+                fontFamily = NationalParkFamily
             )
 
             Column(
@@ -117,12 +121,15 @@ fun login() {
                         backgroundColor = Color.White,
                         focusedBorderColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent,
-                        textColor = Color(android.graphics.Color.parseColor("#5E5E5E"))
+                        textColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
+                        focusedLabelColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
+                        unfocusedLabelColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
+                        cursorColor = Color(android.graphics.Color.parseColor("#5E5E5E"))
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp)
-                        .background(Color.White, RoundedCornerShape(10.dp))  // Use o mesmo shape aqui
+                        .background(Color.White, RoundedCornerShape(10.dp))
                 )
 
                 Text(text = "Senha", fontSize = 20.sp,
@@ -142,12 +149,15 @@ fun login() {
                         backgroundColor = Color.White,
                         focusedBorderColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent,
-                        textColor = Color(android.graphics.Color.parseColor("#5E5E5E"))
+                        textColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
+                        focusedLabelColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
+                        unfocusedLabelColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
+                        cursorColor = Color(android.graphics.Color.parseColor("#5E5E5E"))
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp)
-                        .background(Color.White, RoundedCornerShape(10.dp))  // Use o mesmo shape aqui
+                        .background(Color.White, RoundedCornerShape(10.dp))
                 )
 
                 Text(
@@ -198,7 +208,9 @@ fun login() {
                 ) {
                     // Primeiro botão
                     Button(
-                        onClick = { /* TODO 1 */ },
+                        onClick = { 
+                            Toast.makeText(context, "Desenvolvimento em progresso", Toast.LENGTH_SHORT).show()
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(55.dp),
@@ -229,7 +241,9 @@ fun login() {
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Button(
-                        onClick = { /* TODO 2 */ },
+                        onClick = { 
+                            Toast.makeText(context, "Desenvolvimento em progresso", Toast.LENGTH_SHORT).show()
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(55.dp),
@@ -244,7 +258,7 @@ fun login() {
                         ) {
                             Image(
                                 painter = painterResource(id = R.drawable.apple),
-                                contentDescription = "Google",
+                                contentDescription = "Apple",
                                 modifier = Modifier.size(30.dp)
                             )
                             Spacer(modifier = Modifier.width(16.dp))
