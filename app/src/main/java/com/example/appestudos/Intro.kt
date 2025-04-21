@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.DesktopWindows
 import androidx.compose.material.icons.filled.DeveloperMode
@@ -51,7 +52,7 @@ fun intro(navController: NavController) {
             Flashcard(1, "Programação", Icons.Filled.Code, true),
             Flashcard(2, "Matemática", Icons.Filled.DesktopWindows, true),
             Flashcard(3, "Ciências", Icons.Filled.DeveloperMode, true),
-            Flashcard(4, "História", Icons.Filled.Code, true)
+            Flashcard(4, "História", Icons.Filled.Book, true)
         )
     }
 
