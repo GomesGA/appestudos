@@ -54,7 +54,7 @@ fun intro(navController: NavController) {
             Flashcard(4, "História", Icons.Filled.Code, true)
         )
     }
-    
+
     val privateFlashcards = remember {
         listOf(
             Flashcard(5, "Inglês", Icons.Filled.Code, false),
@@ -63,7 +63,7 @@ fun intro(navController: NavController) {
     }
 
     Scaffold (bottomBar = {
-        MyButtonBar()
+        MyButtonBar(navController)
     }, floatingActionButton = {
         FloatingActionButton(
             onClick = { navController.navigate("createGroup") },
@@ -218,7 +218,7 @@ fun Privados(){
 }
 
 @Composable
-fun MyButtonBar(){
+fun MyButtonBar(navController: NavController){
     val bottomMenuItemsList = prepareButtomMenu()
     val contextForToast = LocalContext.current.applicationContext
     var selectItem by remember {
@@ -235,7 +235,10 @@ fun MyButtonBar(){
                 selected = selectItem==bottomMenuItem.label,
                 onClick = {
                     selectItem=bottomMenuItem.label
-                    Toast.makeText(contextForToast, bottomMenuItem.label, Toast.LENGTH_SHORT).show()
+                    when (bottomMenuItem.label) {
+                        "Maps" -> navController.navigate("map")
+                        else -> Toast.makeText(contextForToast, bottomMenuItem.label, Toast.LENGTH_SHORT).show()
+                    }
                 },
                 icon = {
                     Icon(
