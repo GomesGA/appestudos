@@ -211,7 +211,6 @@ fun login(navController: NavController) {
                 val annotatedText = buildAnnotatedString {
                     append("Não tem uma conta? ")
 
-                    // Marca a parte clicável ("Inscreva-se")
                     pushStringAnnotation(tag = "SIGNUP", annotation = "cadastro")
                     withStyle(
                         style = SpanStyle(
