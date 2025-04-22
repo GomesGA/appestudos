@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -55,6 +57,8 @@ fun MapScreen(navController: NavController) {
     var searchResults by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLocationLoaded by remember { mutableStateOf(false) }
+    var permissionRequested by remember { mutableStateOf(false) }
     
     // Inicializar o banco de dados
     val database = remember { FavoriteLocationDatabase(context) }
@@ -78,7 +82,11 @@ fun MapScreen(navController: NavController) {
     var editSearchResults by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
     var isEditSearching by remember { mutableStateOf(false) }
     var editErrorMessage by remember { mutableStateOf<String?>(null) }
-
+    // Usar a localização atual ou uma localização padrão
+    val defaultLocation = LatLng(-18.913664, -48.266560)
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(defaultLocation, 15f)
+    }
     // Carregar localizações favoritas do banco de dados
     LaunchedEffect(Unit) {
         favoriteLocations = database.getAllFavoriteLocations()
@@ -145,16 +153,25 @@ fun MapScreen(navController: NavController) {
     ) { isGranted ->
         hasLocationPermission = isGranted
         if (isGranted) {
+            // user accepted → start GPS
             startLocationUpdates(fusedLocationClient, locationRequest, locationCallback)
+        } else {
+            // user denied → show the map at default and mark loaded
+            cameraPositionState.position =
+                CameraPosition.fromLatLngZoom(defaultLocation, 15f)
+            isLocationLoaded = true
         }
     }
 
     // Solicitar permissão e iniciar atualizações de localização
-    LaunchedEffect(hasLocationPermission) {
-        if (!hasLocationPermission) {
-            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        } else {
+    LaunchedEffect(Unit) {
+        if (hasLocationPermission) {
+            // already granted: go straight to updates
             startLocationUpdates(fusedLocationClient, locationRequest, locationCallback)
+        } else if (!permissionRequested) {
+            // first time through: ask the user
+            permissionRequested = true
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 
@@ -182,31 +199,15 @@ fun MapScreen(navController: NavController) {
         )
     }
 
-    // Usar a localização atual ou uma localização padrão
-    val defaultLocation = LatLng(-18.913664, -48.266560) // Uberlândia como fallback
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(
-            currentLocation ?: defaultLocation,
-            15f
-        )
-    }
 
-    // Atualizar a posição da câmera quando a localização mudar e estiver seguindo o usuário
+
     LaunchedEffect(currentLocation) {
-        if (isFollowingUser) {
-            currentLocation?.let { location ->
-                cameraPositionState.animate(
-                    update = CameraUpdateFactory.newCameraPosition(
-                        CameraPosition.Builder()
-                            .target(location)
-                            .zoom(15f)
-                            .build()
-                    ),
-                    durationMs = 1000
-                )
-            }
+        currentLocation?.let { loc ->
+            cameraPositionState.position = CameraPosition.fromLatLngZoom(loc, 15f)
+            isLocationLoaded = true
         }
     }
+
 
     // Função auxiliar para realizar pesquisa
     fun performSearch(query: String, onResult: (List<AutocompletePrediction>, String?) -> Unit) {
@@ -218,7 +219,7 @@ fun MapScreen(navController: NavController) {
                     .build()
 
                 placesClient.findAutocompletePredictions(request)
-                    ?.addOnSuccessListener { response ->
+                    .addOnSuccessListener { response ->
                         onResult(response.autocompletePredictions, null)
                     }
                     ?.addOnFailureListener { exception ->
@@ -301,6 +302,7 @@ fun MapScreen(navController: NavController) {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        if (isLocationLoaded) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
@@ -335,6 +337,14 @@ fun MapScreen(navController: NavController) {
                 )
             }
         }
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
 
         // Search bar and results
         Column(
@@ -363,7 +373,7 @@ fun MapScreen(navController: NavController) {
                         onClick = { navController.popBackStack() }
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Voltar",
                             tint = Color.Red
                         )
@@ -579,7 +589,7 @@ fun MapScreen(navController: NavController) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("Ordem", color = Color.Black)
                             Icon(
-                                imageVector = Icons.Default.Sort,
+                                imageVector = Icons.AutoMirrored.Filled.Sort,
                                 contentDescription = "Sort",
                                 tint = Color.Black
                             )
