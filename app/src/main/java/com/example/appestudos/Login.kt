@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Icon
@@ -37,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.paint
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -46,6 +48,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
@@ -62,6 +67,10 @@ fun login(navController: NavController) {
     val context = LocalContext.current
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     val dbHelper = remember { UserDatabaseHelper(context) }
+    var text by rememberSaveable { mutableStateOf("") }
+    var text2 by rememberSaveable { mutableStateOf("") }
+    var passwordFieldFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+    var loginButtonFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
 
     Column(
         Modifier
@@ -110,13 +119,21 @@ fun login(navController: NavController) {
                     modifier = Modifier.padding(top = 16.dp),
                     color = Color.Black
                 )
-                var text by rememberSaveable { mutableStateOf("") }
 
                 TextField(
                     value = text,
                     onValueChange = { text = it },
                     label = { Text(text = "Escreva seu Login") },
                     shape = RoundedCornerShape(10.dp),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = {
+                            passwordFieldFocusRequester.requestFocus()
+                        }
+                    ),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         backgroundColor = Color.White,
                         focusedBorderColor = Color.Transparent,
@@ -137,18 +154,34 @@ fun login(navController: NavController) {
                     modifier = Modifier.padding(top = 16.dp),
                     color = Color.Black
                 )
-                var text2 by rememberSaveable { mutableStateOf("") }
 
                 TextField(
                     value = text2,
                     onValueChange = { text2 = it },
                     label = { Text(text = "Escreva a sua senha") },
                     shape = RoundedCornerShape(10.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if (text.isNotEmpty() && text2.isNotEmpty()) {
+                                if (dbHelper.checkUser(text, text2)) {
+                                    Toast.makeText(context, "Login Realizado com sucesso", Toast.LENGTH_SHORT).show()
+                                    navController.navigate("intro")
+                                } else {
+                                    Toast.makeText(context, "Usuário ou senha incorretos", Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    ),
                     visualTransformation = if (passwordVisible) {
-                        androidx.compose.ui.text.input.VisualTransformation.None
+                        VisualTransformation.None
                     } else {
-                        androidx.compose.ui.text.input.PasswordVisualTransformation()
+                        PasswordVisualTransformation()
                     },
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -172,6 +205,7 @@ fun login(navController: NavController) {
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                         .background(Color.White, RoundedCornerShape(10.dp))
+                        .focusRequester(passwordFieldFocusRequester)
                 )
 
                 val annotatedText = buildAnnotatedString {
@@ -196,26 +230,26 @@ fun login(navController: NavController) {
                         .padding(top = 2.dp),
                     contentAlignment = Alignment.Center
                 )
-                    {
-                        ClickableText(
-                            text = annotatedText,
-                            modifier = Modifier
-                                .padding(top = 24.dp)
-                                .fillMaxWidth(),
-                            style = TextStyle(
-                                fontSize = 14.sp,
-                                textAlign = TextAlign.Center,
-                                color = Color(android.graphics.Color.parseColor("#5E5E5E"))
-                            ),
-                            onTextLayout = { textLayoutResult ->
-                            },
-                            onClick = { offset ->
-                                annotatedText.getStringAnnotations("SIGNUP", offset, offset)
-                                    .firstOrNull()
-                                    ?.let { navController.navigate("cadastro") }
-                            }
-                        )
-                    }
+                {
+                    ClickableText(
+                        text = annotatedText,
+                        modifier = Modifier
+                            .padding(top = 24.dp)
+                            .fillMaxWidth(),
+                        style = TextStyle(
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center,
+                            color = Color(android.graphics.Color.parseColor("#5E5E5E"))
+                        ),
+                        onTextLayout = { textLayoutResult ->
+                        },
+                        onClick = { offset ->
+                            annotatedText.getStringAnnotations("SIGNUP", offset, offset)
+                                .firstOrNull()
+                                ?.let { navController.navigate("cadastro") }
+                        }
+                    )
+                }
 
                 val forgotPasswordText = buildAnnotatedString {
                     // Define toda a frase como clicável (ou pode marcar apenas parte)
