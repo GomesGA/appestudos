@@ -27,6 +27,13 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Science
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
 
 data class IconOption(
     val icon: ImageVector,
@@ -40,24 +47,25 @@ fun CreateGroupScreen(navController: NavController) {
 
     val iconOptions = listOf(
         IconOption(Icons.Filled.Code, 1),
-        IconOption(Icons.Filled.Lan, 2),
-        IconOption(Icons.Filled.Computer, 3),
-        IconOption(Icons.Filled.AttachMoney, 4),
-        IconOption(Icons.Filled.PlusOne, 5),
-        IconOption(Icons.Filled.Book, 6),
-        IconOption(Icons.Filled.Biotech, 7),
-        IconOption(Icons.Filled.AccountBalance, 8)
+        IconOption(Icons.Filled.Calculate, 2),
+        IconOption(Icons.Filled.Science, 3),
+        IconOption(Icons.Filled.Book, 4),
+        IconOption(Icons.Filled.Public, 5),
+        IconOption(Icons.Filled.Language, 6),
+        IconOption(Icons.Filled.Computer, 7),
+        IconOption(Icons.Filled.Business, 8)
     )
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Criar Grupo de Flashcards") },
+                title = { Text("Criar Grupo de Flashcards", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
                     }
                 },
+                backgroundColor = Color.Black,
                 modifier = Modifier.statusBarsPadding()
             )
         }
@@ -123,7 +131,7 @@ fun CreateGroupScreen(navController: NavController) {
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
+                        .height(60.dp)
                         .padding(bottom = 16.dp),
                     enabled = groupName.isNotBlank() && selectedIcon != null
                 ) {
@@ -157,4 +165,10 @@ fun IconSelectionItem(
             modifier = Modifier.size(32.dp)
         )
     }
-} 
+}
+
+@Preview
+@Composable
+fun CreateGroupScreenPreview() {
+    CreateGroupScreen(navController = rememberNavController())
+}
