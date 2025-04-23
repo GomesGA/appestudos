@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -59,7 +60,7 @@ fun MapScreen(navController: NavController) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLocationLoaded by remember { mutableStateOf(false) }
     var permissionRequested by remember { mutableStateOf(false) }
-
+    
     // Inicializar o banco de dados
     val database = remember { FavoriteLocationDatabase(context) }
     
@@ -87,7 +88,7 @@ fun MapScreen(navController: NavController) {
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(defaultLocation, 15f)
     }
-
+    
     // Carregar localizações favoritas do banco de dados
     LaunchedEffect(Unit) {
         favoriteLocations = database.getAllFavoriteLocations()
@@ -201,7 +202,7 @@ fun MapScreen(navController: NavController) {
             )
         )
     }
-
+    
     // Atualizar a posição da câmera quando a localização mudar e estiver seguindo o usuário
     LaunchedEffect(currentLocation) {
         currentLocation?.let { loc ->
@@ -220,7 +221,7 @@ fun MapScreen(navController: NavController) {
                     .build()
 
                 placesClient.findAutocompletePredictions(request)
-                    ?.addOnSuccessListener { response ->
+                    .addOnSuccessListener { response ->
                         onResult(response.autocompletePredictions, null)
                     }
                     ?.addOnFailureListener { exception ->
@@ -590,7 +591,7 @@ fun MapScreen(navController: NavController) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("Ordem", color = Color.Black)
                             Icon(
-                                imageVector = Icons.Default.Sort,
+                                imageVector = Icons.AutoMirrored.Filled.Sort,
                                 contentDescription = "Sort",
                                 tint = Color.Black
                             )
