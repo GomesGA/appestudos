@@ -5,6 +5,15 @@ plugins {
 }
 def compose_version = '1.4.3'
 
+// Leitura da chave da API do local.properties
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
 android {
     namespace 'com.example.appestudos'
     compileSdk 35
@@ -17,6 +26,9 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Adiciona a chave da API como buildConfigField
+        buildConfigField "String", "MAPS_API_KEY", "\"${localProperties.getProperty('MAPS_API_KEY')}\""
     }
 
     buildTypes {
