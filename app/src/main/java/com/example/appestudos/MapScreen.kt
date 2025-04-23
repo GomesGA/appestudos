@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -88,24 +89,28 @@ fun MapScreen(navController: NavController) {
     val placesClient = remember {
         try {
             if (!Places.isInitialized()) {
-                Places.initialize(context, context.getString(R.string.google_maps_key))
+                val apiKey = context.getString(R.string.google_maps_key)
+                Log.d("MapScreen", "Tentando inicializar Places API com chave: $apiKey")
+                Places.initialize(context, apiKey)
+                Log.d("MapScreen", "API Key: ${BuildConfig.MAPS_API_KEY}")
                 println("Places API inicializado com sucesso")
             }
             Places.createClient(context).also {
                 println("Places Client criado com sucesso")
             }
         } catch (e: Exception) {
+            Log.e("MapScreen", "Erro detalhado ao inicializar Places API", e)
             println("Erro ao inicializar Places API: ${e.message}")
             null
         }
     }
-    
+
     // Estado para armazenar a localização atual
     var currentLocation by remember { mutableStateOf<LatLng?>(null) }
-    
+
     // Estado para controlar se o mapa deve seguir a localização do usuário
     var isFollowingUser by remember { mutableStateOf(true) }
-    
+
     // Estado para permissões
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -314,8 +319,8 @@ fun MapScreen(navController: NavController) {
     // Função para atualizar localização favorita
     val updateFavoriteLocation = { id: Int, name: String, location: LatLng ->
         database.updateFavoriteLocation(id, name, location)
-        favoriteLocations = favoriteLocations.map { 
-            if (it.id == id) it.copy(name = name, location = location) else it 
+        favoriteLocations = favoriteLocations.map {
+            if (it.id == id) it.copy(name = name, location = location) else it
         }
     }
 
@@ -325,9 +330,7 @@ fun MapScreen(navController: NavController) {
             cameraPositionState = cameraPositionState,
             properties = properties,
             uiSettings = uiSettings,
-            onMapClick = { isFollowingUser = false }
-        )
-            onMapClick = { latLng -> 
+            onMapClick = { latLng ->
                 isFollowingUser = false
                 if (isSelectingLocation) {
                     selectedLocation = latLng
@@ -494,7 +497,7 @@ fun MapScreen(navController: NavController) {
                                         )
                                     }
                                 }
-
+                                
                                 // Botão de adicionar aos favoritos
                                 IconButton(
                                     onClick = {
@@ -612,7 +615,7 @@ fun MapScreen(navController: NavController) {
 
         // Botão para adicionar nova localização favorita
         FloatingActionButton(
-            onClick = {
+            onClick = { 
                 if (favoriteLocations.size >= 7) {
                     // Mostrar mensagem de limite atingido
                     Toast.makeText(context, "Limite de 7 localizações favoritas atingido", Toast.LENGTH_SHORT).show()
@@ -717,7 +720,7 @@ fun MapScreen(navController: NavController) {
                                 )
                             }
                         }
-
+                        
                         if (favoriteLocations.isEmpty()) {
                             Text(
                                 text = "Nenhuma localização favorita adicionada",
@@ -745,7 +748,7 @@ fun MapScreen(navController: NavController) {
                                                 color = Color.Gray
                                             )
                                         }
-
+                                        
                                         // Botão de editar
                                         IconButton(
                                             onClick = {
@@ -760,7 +763,7 @@ fun MapScreen(navController: NavController) {
                                                 tint = Color.Blue
                                             )
                                         }
-
+                                        
                                         IconButton(
                                             onClick = {
                                                 scope.launch {
@@ -782,7 +785,7 @@ fun MapScreen(navController: NavController) {
                                                 tint = Color.Blue
                                             )
                                         }
-
+                                        
                                         IconButton(
                                             onClick = { removeFavoriteLocation(favorite.id) }
                                         ) {
@@ -807,7 +810,7 @@ fun MapScreen(navController: NavController) {
         // Diálogo para adicionar localização favorita
         if (showAddFavoriteDialog) {
             AlertDialog(
-                onDismissRequest = {
+                onDismissRequest = { 
                     showAddFavoriteDialog = false
                     newFavoriteName = ""
                     selectedLocation = null
@@ -873,7 +876,7 @@ fun MapScreen(navController: NavController) {
                 },
                 dismissButton = {
                     TextButton(
-                        onClick = {
+                        onClick = { 
                             showAddFavoriteDialog = false
                             newFavoriteName = ""
                             selectedLocation = null
@@ -907,7 +910,7 @@ fun MapScreen(navController: NavController) {
         // Diálogo de edição
         if (showEditDialog) {
             AlertDialog(
-                onDismissRequest = {
+                onDismissRequest = { 
                     showEditDialog = false
                     editingLocation = null
                     editingName = ""
@@ -926,13 +929,13 @@ fun MapScreen(navController: NavController) {
                             label = { Text("Nome da localização") },
                             modifier = Modifier.fillMaxWidth()
                         )
-
+                        
                         Spacer(modifier = Modifier.height(16.dp))
-
+                        
                         // Campo de pesquisa
                         TextField(
                             value = editSearchQuery,
-                            onValueChange = { newValue ->
+                            onValueChange = { newValue -> 
                                 editSearchQuery = newValue
                                 performSearch(newValue) { predictions, error ->
                                     editSearchResults = predictions
@@ -951,7 +954,7 @@ fun MapScreen(navController: NavController) {
                             trailingIcon = if (editSearchQuery.isNotEmpty()) {
                                 {
                                     IconButton(
-                                        onClick = {
+                                        onClick = { 
                                             editSearchQuery = ""
                                             editSearchResults = emptyList()
                                             editErrorMessage = null
@@ -1099,7 +1102,7 @@ fun MapScreen(navController: NavController) {
                 },
                 dismissButton = {
                     TextButton(
-                        onClick = {
+                        onClick = { 
                             showEditDialog = false
                             editingLocation = null
                             editingName = ""
