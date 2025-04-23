@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -56,7 +57,9 @@ fun MapScreen(navController: NavController) {
     var searchResults by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    
+    var isLocationLoaded by remember { mutableStateOf(false) }
+    var permissionRequested by remember { mutableStateOf(false) }
+
     // Inicializar o banco de dados
     val database = remember { FavoriteLocationDatabase(context) }
     
@@ -79,6 +82,11 @@ fun MapScreen(navController: NavController) {
     var editSearchResults by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
     var isEditSearching by remember { mutableStateOf(false) }
     var editErrorMessage by remember { mutableStateOf<String?>(null) }
+    // Usar a localização atual ou uma localização padrão
+    val defaultLocation = LatLng(-18.913664, -48.266560)
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(defaultLocation, 15f)
+    }
 
     // Carregar localizações favoritas do banco de dados
     LaunchedEffect(Unit) {
@@ -144,21 +152,29 @@ fun MapScreen(navController: NavController) {
     }
 
     // Launcher para solicitar permissão
+    // Launcher para solicitar permissão
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         hasLocationPermission = isGranted
         if (isGranted) {
+            // user accepted → start GPS
             startLocationUpdates(fusedLocationClient, locationRequest, locationCallback)
+        } else {
+            // user denied → show the map at default and mark loaded
+            cameraPositionState.position =
+                CameraPosition.fromLatLngZoom(defaultLocation, 15f)
+            isLocationLoaded = true
         }
     }
 
     // Solicitar permissão e iniciar atualizações de localização
-    LaunchedEffect(hasLocationPermission) {
-        if (!hasLocationPermission) {
-            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        } else {
+    LaunchedEffect(Unit) {
+        if (hasLocationPermission) {
             startLocationUpdates(fusedLocationClient, locationRequest, locationCallback)
+        } else if (!permissionRequested) {
+            permissionRequested = true
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 
@@ -186,76 +202,39 @@ fun MapScreen(navController: NavController) {
         )
     }
 
-    // Usar a localização atual ou uma localização padrão
-    val defaultLocation = LatLng(-18.913664, -48.266560) // Uberlândia como fallback
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(
-            currentLocation ?: defaultLocation,
-            15f
-        )
-    }
-
     // Atualizar a posição da câmera quando a localização mudar e estiver seguindo o usuário
     LaunchedEffect(currentLocation) {
-        if (isFollowingUser) {
-            currentLocation?.let { location ->
-                cameraPositionState.animate(
-                    update = CameraUpdateFactory.newCameraPosition(
-                        CameraPosition.Builder()
-                            .target(location)
-                            .zoom(15f)
-                            .build()
-                    ),
-                    durationMs = 1000
-                )
-            }
+        currentLocation?.let { loc ->
+            cameraPositionState.position = CameraPosition.fromLatLngZoom(loc, 15f)
+            isLocationLoaded = true
         }
     }
 
     // Função para realizar a pesquisa
-    val performSearch = { query: String ->
+    fun performSearch(query: String, onResult: (List<AutocompletePrediction>, String?) -> Unit) {
         if (query.isNotEmpty() && placesClient != null) {
-            isSearching = true
-            errorMessage = null
-            println("Iniciando pesquisa para: $query")
-
             try {
                 val request = FindAutocompletePredictionsRequest.builder()
                     .setQuery(query)
                     .setCountries("BR")
                     .build()
 
-                placesClient?.findAutocompletePredictions(request)
+                placesClient.findAutocompletePredictions(request)
                     ?.addOnSuccessListener { response ->
-                        val predictions = response.autocompletePredictions
-                        println("Sugestões recebidas: ${predictions.size}")
-                        predictions.forEach { prediction ->
-                            println("Sugestão: ${prediction.getFullText(null)}")
-                        }
-                        searchResults = predictions
-                        isSearching = false
+                        onResult(response.autocompletePredictions, null)
                     }
                     ?.addOnFailureListener { exception ->
-                        println("Erro na busca: ${exception.message}")
-                        println("Stack trace: ${exception.stackTraceToString()}")
-                        errorMessage = "Erro na busca: ${exception.message}"
-                        searchResults = emptyList()
-                        isSearching = false
+                        onResult(emptyList(), "Erro na busca: ${exception.message}")
                     }
             } catch (e: Exception) {
-                println("Exceção ao fazer a busca: ${e.message}")
-                println("Stack trace: ${e.stackTraceToString()}")
-                errorMessage = "Erro: ${e.message}"
-                searchResults = emptyList()
-                isSearching = false
+                onResult(emptyList(), "Erro: ${e.message}")
             }
         } else {
             if (placesClient == null) {
-                println("Places Client não está inicializado")
-                errorMessage = "Serviço de busca não está disponível"
+                onResult(emptyList(), "Serviço de busca não está disponível")
+            } else {
+                onResult(emptyList(), null)
             }
-            searchResults = emptyList()
-            isSearching = false
         }
     }
 
@@ -324,38 +303,47 @@ fun MapScreen(navController: NavController) {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState,
-            properties = properties,
-            uiSettings = uiSettings,
-            onMapClick = { latLng ->
-                isFollowingUser = false
-                if (isSelectingLocation) {
-                    selectedLocation = latLng
-                    showAddFavoriteDialog = true
-                    isSelectingLocation = false
-                } else if (isEditingLocation && editingLocation != null) {
-                    updateFavoriteLocation(
-                        editingLocation!!.id,
-                        editingName,
-                        latLng
+        if (isLocationLoaded) {
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                properties = properties,
+                uiSettings = uiSettings,
+                onMapClick = { latLng ->
+                    isFollowingUser = false
+                    if (isSelectingLocation) {
+                        selectedLocation = latLng
+                        showAddFavoriteDialog = true
+                        isSelectingLocation = false
+                    } else if (isEditingLocation && editingLocation != null) {
+                        updateFavoriteLocation(
+                            editingLocation!!.id,
+                            editingName,
+                            latLng
+                        )
+                        isEditingLocation = false
+                        editingLocation = null
+                        editingName = ""
+                        showEditDialog = false
+                    }
+                }
+            ) {
+                // Mostrar marcadores para localizações favoritas
+                favoriteLocations.forEach { favorite ->
+                    Marker(
+                        state = MarkerState(position = favorite.location),
+                        title = favorite.name,
+                        snippet = "Localização favorita",
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
                     )
-                    isEditingLocation = false
-                    editingLocation = null
-                    editingName = ""
-                    showEditDialog = false
                 }
             }
-        ) {
-            // Mostrar marcadores para localizações favoritas
-            favoriteLocations.forEach { favorite ->
-                Marker(
-                    state = MarkerState(position = favorite.location),
-                    title = favorite.name,
-                    snippet = "Localização favorita",
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
-                )
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
         }
 
@@ -386,7 +374,7 @@ fun MapScreen(navController: NavController) {
                         onClick = { navController.popBackStack() }
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Voltar",
                             tint = Color.Red
                         )
