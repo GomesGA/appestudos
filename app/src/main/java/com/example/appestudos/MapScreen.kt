@@ -221,7 +221,7 @@ fun MapScreen(navController: NavController) {
                     .build()
 
                 placesClient.findAutocompletePredictions(request)
-                    .addOnSuccessListener { response ->
+                    ?.addOnSuccessListener { response ->
                         onResult(response.autocompletePredictions, null)
                     }
                     ?.addOnFailureListener { exception ->
