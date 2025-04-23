@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -87,6 +88,7 @@ fun MapScreen(navController: NavController) {
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(defaultLocation, 15f)
     }
+    
     // Carregar localizações favoritas do banco de dados
     LaunchedEffect(Unit) {
         favoriteLocations = database.getAllFavoriteLocations()
@@ -96,13 +98,16 @@ fun MapScreen(navController: NavController) {
     val placesClient = remember {
         try {
             if (!Places.isInitialized()) {
-                Places.initialize(context, context.getString(R.string.google_maps_key))
+                val apiKey = context.getString(R.string.google_maps_key)
+                Log.d("MapScreen", "Tentando inicializar Places API com chave: $apiKey")
+                Places.initialize(context, apiKey)
                 println("Places API inicializado com sucesso")
             }
             Places.createClient(context).also {
                 println("Places Client criado com sucesso")
             }
         } catch (e: Exception) {
+            Log.e("MapScreen", "Erro detalhado ao inicializar Places API", e)
             println("Erro ao inicializar Places API: ${e.message}")
             null
         }
@@ -148,6 +153,7 @@ fun MapScreen(navController: NavController) {
     }
 
     // Launcher para solicitar permissão
+    // Launcher para solicitar permissão
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -166,10 +172,8 @@ fun MapScreen(navController: NavController) {
     // Solicitar permissão e iniciar atualizações de localização
     LaunchedEffect(Unit) {
         if (hasLocationPermission) {
-            // already granted: go straight to updates
             startLocationUpdates(fusedLocationClient, locationRequest, locationCallback)
         } else if (!permissionRequested) {
-            // first time through: ask the user
             permissionRequested = true
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
@@ -198,9 +202,8 @@ fun MapScreen(navController: NavController) {
             )
         )
     }
-
-
-
+    
+    // Atualizar a posição da câmera quando a localização mudar e estiver seguindo o usuário
     LaunchedEffect(currentLocation) {
         currentLocation?.let { loc ->
             cameraPositionState.position = CameraPosition.fromLatLngZoom(loc, 15f)
@@ -208,8 +211,7 @@ fun MapScreen(navController: NavController) {
         }
     }
 
-
-    // Função auxiliar para realizar pesquisa
+    // Função para realizar a pesquisa
     fun performSearch(query: String, onResult: (List<AutocompletePrediction>, String?) -> Unit) {
         if (query.isNotEmpty() && placesClient != null) {
             try {
@@ -296,47 +298,47 @@ fun MapScreen(navController: NavController) {
     // Função para atualizar localização favorita
     val updateFavoriteLocation = { id: Int, name: String, location: LatLng ->
         database.updateFavoriteLocation(id, name, location)
-        favoriteLocations = favoriteLocations.map { 
-            if (it.id == id) it.copy(name = name, location = location) else it 
+        favoriteLocations = favoriteLocations.map {
+            if (it.id == id) it.copy(name = name, location = location) else it
         }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (isLocationLoaded) {
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState,
-            properties = properties,
-            uiSettings = uiSettings,
-            onMapClick = { latLng -> 
-                isFollowingUser = false
-                if (isSelectingLocation) {
-                    selectedLocation = latLng
-                    showAddFavoriteDialog = true
-                    isSelectingLocation = false
-                } else if (isEditingLocation && editingLocation != null) {
-                    updateFavoriteLocation(
-                        editingLocation!!.id,
-                        editingName,
-                        latLng
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                properties = properties,
+                uiSettings = uiSettings,
+                onMapClick = { latLng ->
+                    isFollowingUser = false
+                    if (isSelectingLocation) {
+                        selectedLocation = latLng
+                        showAddFavoriteDialog = true
+                        isSelectingLocation = false
+                    } else if (isEditingLocation && editingLocation != null) {
+                        updateFavoriteLocation(
+                            editingLocation!!.id,
+                            editingName,
+                            latLng
+                        )
+                        isEditingLocation = false
+                        editingLocation = null
+                        editingName = ""
+                        showEditDialog = false
+                    }
+                }
+            ) {
+                // Mostrar marcadores para localizações favoritas
+                favoriteLocations.forEach { favorite ->
+                    Marker(
+                        state = MarkerState(position = favorite.location),
+                        title = favorite.name,
+                        snippet = "Localização favorita",
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
                     )
-                    isEditingLocation = false
-                    editingLocation = null
-                    editingName = ""
-                    showEditDialog = false
                 }
             }
-        ) {
-            // Mostrar marcadores para localizações favoritas
-            favoriteLocations.forEach { favorite ->
-                Marker(
-                    state = MarkerState(position = favorite.location),
-                    title = favorite.name,
-                    snippet = "Localização favorita",
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
-                )
-            }
-        }
         } else {
             Box(
                 modifier = Modifier.fillMaxSize(),
