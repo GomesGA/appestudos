@@ -45,6 +45,10 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.*
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.platform.LocalFocusManager
 
 data class FavoriteLocation(
     val id: Int,
@@ -62,6 +66,9 @@ fun MapScreen(navController: NavController) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLocationLoaded by remember { mutableStateOf(false) }
     var permissionRequested by remember { mutableStateOf(false) }
+    
+    // Substituir FocusRequester por LocalFocusManager
+    val focusManager = LocalFocusManager.current
     
     // Inicializar o banco de dados
     val database = remember { FavoriteLocationDatabase(context) }
@@ -298,14 +305,25 @@ fun MapScreen(navController: NavController) {
         }
     }
 
+    // Função para limpar a pesquisa
+    val clearSearch = {
+        searchQuery = ""
+        searchResults = emptyList()
+        errorMessage = null
+        focusManager.clearFocus()
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         if (isLocationLoaded) {
             GoogleMap(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { clearSearch() },
                 cameraPositionState = cameraPositionState,
                 properties = properties,
                 uiSettings = uiSettings,
                 onMapClick = { latLng ->
+                    clearSearch()
                     isFollowingUser = false
                     if (isEditingLocation && editingLocation != null) {
                         updateFavoriteLocation(
@@ -399,6 +417,7 @@ fun MapScreen(navController: NavController) {
                                         searchQuery = ""
                                         searchResults = emptyList()
                                         errorMessage = null
+                                        focusManager.clearFocus()
                                     }
                                 ) {
                                     Icon(
@@ -513,57 +532,12 @@ fun MapScreen(navController: NavController) {
                     color = Color.Red
                 )
             }
-
-            // Filter and Sort buttons (only show when not searching)
-            if (!isSearching && searchResults.isEmpty()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = { /* TODO: Implement filter */ },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(40.dp),
-                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
-                        elevation = ButtonDefaults.elevation(defaultElevation = 2.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Filtro", color = Color.Black)
-                            Icon(
-                                imageVector = Icons.Default.FilterList,
-                                contentDescription = "Filter",
-                                tint = Color.Black
-                            )
-                        }
-                    }
-
-                    Button(
-                        onClick = { /* TODO: Implement sort */ },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(40.dp),
-                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
-                        elevation = ButtonDefaults.elevation(defaultElevation = 2.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Ordem", color = Color.Black)
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Sort,
-                                contentDescription = "Sort",
-                                tint = Color.Black
-                            )
-                        }
-                    }
-                }
-            }
         }
 
         // Recenter button
         FloatingActionButton(
             onClick = {
+                clearSearch()
                 currentLocation?.let { location ->
                     isFollowingUser = true
                     scope.launch {
@@ -593,7 +567,10 @@ fun MapScreen(navController: NavController) {
 
         // Botão para mostrar localizações favoritas
         FloatingActionButton(
-            onClick = { showFavoritesPanel = !showFavoritesPanel },
+            onClick = { 
+                clearSearch()
+                showFavoritesPanel = !showFavoritesPanel 
+            },
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(16.dp),
