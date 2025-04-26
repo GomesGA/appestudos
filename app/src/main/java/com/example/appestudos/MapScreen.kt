@@ -1,9 +1,11 @@
 package com.example.appestudos
 
+import androidx.compose.ui.res.colorResource
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,6 +17,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -40,6 +45,10 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.*
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.platform.LocalFocusManager
 
 data class FavoriteLocation(
     val id: Int,
@@ -55,17 +64,18 @@ fun MapScreen(navController: NavController) {
     var searchResults by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLocationLoaded by remember { mutableStateOf(false) }
+    var permissionRequested by remember { mutableStateOf(false) }
+    
+    // Substituir FocusRequester por LocalFocusManager
+    val focusManager = LocalFocusManager.current
     
     // Inicializar o banco de dados
     val database = remember { FavoriteLocationDatabase(context) }
-    
+
     // Estados para localizações favoritas
     var favoriteLocations by remember { mutableStateOf<List<FavoriteLocation>>(emptyList()) }
-    var showAddFavoriteDialog by remember { mutableStateOf(false) }
-    var selectedLocation by remember { mutableStateOf<LatLng?>(null) }
-    var newFavoriteName by remember { mutableStateOf("") }
     var showFavoritesPanel by remember { mutableStateOf(false) }
-    var isSelectingLocation by remember { mutableStateOf(false) }
 
     // Adicionar estados para edição
     var editingLocation by remember { mutableStateOf<FavoriteLocation?>(null) }
@@ -78,7 +88,12 @@ fun MapScreen(navController: NavController) {
     var editSearchResults by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
     var isEditSearching by remember { mutableStateOf(false) }
     var editErrorMessage by remember { mutableStateOf<String?>(null) }
-
+    // Usar a localização atual ou uma localização padrão
+    val defaultLocation = LatLng(-18.913664, -48.266560)
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(defaultLocation, 15f)
+    }
+    
     // Carregar localizações favoritas do banco de dados
     LaunchedEffect(Unit) {
         favoriteLocations = database.getAllFavoriteLocations()
@@ -91,6 +106,11 @@ fun MapScreen(navController: NavController) {
             val apiKey = applicationInfo.metaData.getString("com.google.android.geo.API_KEY") ?: ""
 
             if (!Places.isInitialized()) {
+<<<<<<< HEAD
+                val apiKey = context.getString(R.string.google_maps_key)
+                Log.d("MapScreen", "Tentando inicializar Places API com chave: $apiKey")
+=======
+>>>>>>> master
                 Places.initialize(context, apiKey)
                 println("Places API inicializado com sucesso")
             }
@@ -98,6 +118,7 @@ fun MapScreen(navController: NavController) {
                 println("Places Client criado com sucesso")
             }
         } catch (e: Exception) {
+            Log.e("MapScreen", "Erro detalhado ao inicializar Places API", e)
             println("Erro ao inicializar Places API: ${e.message}")
             null
         }
@@ -148,16 +169,23 @@ fun MapScreen(navController: NavController) {
     ) { isGranted ->
         hasLocationPermission = isGranted
         if (isGranted) {
+            // user accepted → start GPS
             startLocationUpdates(fusedLocationClient, locationRequest, locationCallback)
+        } else {
+            // user denied → show the map at default and mark loaded
+            cameraPositionState.position =
+                CameraPosition.fromLatLngZoom(defaultLocation, 15f)
+            isLocationLoaded = true
         }
     }
 
     // Solicitar permissão e iniciar atualizações de localização
-    LaunchedEffect(hasLocationPermission) {
-        if (!hasLocationPermission) {
-            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        } else {
+    LaunchedEffect(Unit) {
+        if (hasLocationPermission) {
             startLocationUpdates(fusedLocationClient, locationRequest, locationCallback)
+        } else if (!permissionRequested) {
+            permissionRequested = true
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 
@@ -184,34 +212,16 @@ fun MapScreen(navController: NavController) {
             )
         )
     }
-
-    // Usar a localização atual ou uma localização padrão
-    val defaultLocation = LatLng(-18.913664, -48.266560) // Uberlândia como fallback
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(
-            currentLocation ?: defaultLocation,
-            15f
-        )
-    }
-
+    
     // Atualizar a posição da câmera quando a localização mudar e estiver seguindo o usuário
     LaunchedEffect(currentLocation) {
-        if (isFollowingUser) {
-            currentLocation?.let { location ->
-                cameraPositionState.animate(
-                    update = CameraUpdateFactory.newCameraPosition(
-                        CameraPosition.Builder()
-                            .target(location)
-                            .zoom(15f)
-                            .build()
-                    ),
-                    durationMs = 1000
-                )
-            }
+        currentLocation?.let { loc ->
+            cameraPositionState.position = CameraPosition.fromLatLngZoom(loc, 15f)
+            isLocationLoaded = true
         }
     }
 
-    // Função auxiliar para realizar pesquisa
+    // Função para realizar a pesquisa
     fun performSearch(query: String, onResult: (List<AutocompletePrediction>, String?) -> Unit) {
         if (query.isNotEmpty() && placesClient != null) {
             try {
@@ -251,7 +261,7 @@ fun MapScreen(navController: NavController) {
                         searchQuery = prediction.getPrimaryText(null).toString()
                         searchResults = emptyList()
                         isFollowingUser = false
-                        
+
                         scope.launch {
                             cameraPositionState.animate(
                                 update = CameraUpdateFactory.newCameraPosition(
@@ -272,7 +282,7 @@ fun MapScreen(navController: NavController) {
         }
     }
 
-    // Função para adicionar localização favorita
+    // Função para adicionar localização favorita (mantida para uso na barra de pesquisa)
     val addFavoriteLocation = { location: LatLng, name: String ->
         if (database.getFavoriteLocationsCount() < 7) {
             val id = database.addFavoriteLocation(name, location)
@@ -283,8 +293,6 @@ fun MapScreen(navController: NavController) {
                     location = location
                 )
                 favoriteLocations = favoriteLocations + newFavorite
-                showAddFavoriteDialog = false
-                newFavoriteName = ""
             }
         }
     }
@@ -298,44 +306,60 @@ fun MapScreen(navController: NavController) {
     // Função para atualizar localização favorita
     val updateFavoriteLocation = { id: Int, name: String, location: LatLng ->
         database.updateFavoriteLocation(id, name, location)
-        favoriteLocations = favoriteLocations.map { 
-            if (it.id == id) it.copy(name = name, location = location) else it 
+        favoriteLocations = favoriteLocations.map {
+            if (it.id == id) it.copy(name = name, location = location) else it
         }
     }
 
+    // Função para limpar a pesquisa
+    val clearSearch = {
+        searchQuery = ""
+        searchResults = emptyList()
+        errorMessage = null
+        focusManager.clearFocus()
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState,
-            properties = properties,
-            uiSettings = uiSettings,
-            onMapClick = { latLng -> 
-                isFollowingUser = false
-                if (isSelectingLocation) {
-                    selectedLocation = latLng
-                    showAddFavoriteDialog = true
-                    isSelectingLocation = false
-                } else if (isEditingLocation && editingLocation != null) {
-                    updateFavoriteLocation(
-                        editingLocation!!.id,
-                        editingName,
-                        latLng
+        if (isLocationLoaded) {
+            GoogleMap(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { clearSearch() },
+                cameraPositionState = cameraPositionState,
+                properties = properties,
+                uiSettings = uiSettings,
+                onMapClick = { latLng ->
+                    clearSearch()
+                    isFollowingUser = false
+                    if (isEditingLocation && editingLocation != null) {
+                        updateFavoriteLocation(
+                            editingLocation!!.id,
+                            editingName,
+                            latLng
+                        )
+                        isEditingLocation = false
+                        editingLocation = null
+                        editingName = ""
+                        showEditDialog = false
+                    }
+                }
+            ) {
+                // Mostrar marcadores para localizações favoritas
+                favoriteLocations.forEach { favorite ->
+                    Marker(
+                        state = MarkerState(position = favorite.location),
+                        title = favorite.name,
+                        snippet = "Localização favorita",
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
                     )
-                    isEditingLocation = false
-                    editingLocation = null
-                    editingName = ""
-                    showEditDialog = false
                 }
             }
-        ) {
-            // Mostrar marcadores para localizações favoritas
-            favoriteLocations.forEach { favorite ->
-                Marker(
-                    state = MarkerState(position = favorite.location),
-                    title = favorite.name,
-                    snippet = "Localização favorita",
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
-                )
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
         }
 
@@ -366,15 +390,15 @@ fun MapScreen(navController: NavController) {
                         onClick = { navController.popBackStack() }
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Voltar",
-                            tint = Color.Red
+                            tint = Color.Black
                         )
                     }
 
                     TextField(
                         value = searchQuery,
-                        onValueChange = { newValue -> 
+                        onValueChange = { newValue ->
                             searchQuery = newValue
                             performSearch(newValue) { predictions, error ->
                                 searchResults = predictions
@@ -390,94 +414,64 @@ fun MapScreen(navController: NavController) {
                         colors = TextFieldDefaults.textFieldColors(
                             backgroundColor = Color.White,
                             focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            cursorColor = Color.Black,
-                            textColor = Color.Black
+                            unfocusedIndicatorColor = Color.Transparent
                         ),
-                        singleLine = true
-                    )
-
-                    // Clear button
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(
-                            onClick = { 
-                                searchQuery = ""
-                                searchResults = emptyList()
-                                errorMessage = null
+                        trailingIcon = if (searchQuery.isNotEmpty()) {
+                            {
+                                IconButton(
+                                    onClick = {
+                                        searchQuery = ""
+                                        searchResults = emptyList()
+                                        errorMessage = null
+                                        focusManager.clearFocus()
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+                                        contentDescription = "Limpar",
+                                        tint = Color.Gray
+                                    )
+                                }
                             }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Clear,
-                                contentDescription = "Limpar",
-                                tint = Color.Gray
-                            )
-                        }
-                    }
+                        } else null
+                    )
                 }
             }
 
-            // Error message
-            errorMessage?.let {
-                Text(
-                    text = it,
-                    color = Color.Red,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-
-            // Search Results
+            // Search results
             if (searchResults.isNotEmpty()) {
-                println("Mostrando ${searchResults.size} sugestões")
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 4.dp),
+                        .heightIn(max = 300.dp),
                     elevation = 4.dp,
-                    backgroundColor = Color.White,
-                    shape = RoundedCornerShape(8.dp)
+                    backgroundColor = Color.White
                 ) {
-                    LazyColumn(
-                        modifier = Modifier.heightIn(max = 300.dp)
-                    ) {
+                    LazyColumn {
                         items(searchResults) { prediction ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { 
-                                        println("Clicou em: ${prediction.getPrimaryText(null)}")
-                                        selectPlace(prediction)
-                                    }
+                                    .clickable { selectPlace(prediction) }
                                     .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(
-                                    modifier = Modifier.weight(1f),
-                                    verticalAlignment = Alignment.CenterVertically
+                                Column(
+                                    modifier = Modifier.weight(1f)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.LocationOn,
-                                        contentDescription = null,
-                                        tint = Color.Gray,
-                                        modifier = Modifier.size(24.dp)
+                                    Text(
+                                        text = prediction.getPrimaryText(null).toString(),
+                                        style = MaterialTheme.typography.subtitle1
                                     )
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                    Column {
-                                        Text(
-                                            text = prediction.getPrimaryText(null).toString(),
-                                            fontWeight = FontWeight.Normal,
-                                            fontSize = 16.sp,
-                                            color = Color.Black
-                                        )
-                                        Text(
-                                            text = prediction.getSecondaryText(null).toString(),
-                                            fontSize = 14.sp,
-                                            color = Color.Gray
-                                        )
-                                    }
+                                    Text(
+                                        text = prediction.getSecondaryText(null).toString(),
+                                        style = MaterialTheme.typography.caption,
+                                        color = Color.Gray
+                                    )
                                 }
-                                
-                                // Botão de adicionar aos favoritos
+
+                                // Botão de adicionar aos favoritos (MANTIDO)
                                 IconButton(
                                     onClick = {
                                         scope.launch {
@@ -544,79 +538,12 @@ fun MapScreen(navController: NavController) {
                     color = Color.Red
                 )
             }
-
-            // Filter and Sort buttons (only show when not searching)
-            if (!isSearching && searchResults.isEmpty()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = { /* TODO: Implement filter */ },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(40.dp),
-                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
-                        elevation = ButtonDefaults.elevation(defaultElevation = 2.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Filtro", color = Color.Black)
-                            Icon(
-                                imageVector = Icons.Default.FilterList,
-                                contentDescription = "Filter",
-                                tint = Color.Black
-                            )
-                        }
-                    }
-
-                    Button(
-                        onClick = { /* TODO: Implement sort */ },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(40.dp),
-                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
-                        elevation = ButtonDefaults.elevation(defaultElevation = 2.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Ordem", color = Color.Black)
-                            Icon(
-                                imageVector = Icons.Default.Sort,
-                                contentDescription = "Sort",
-                                tint = Color.Black
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // Botão para adicionar nova localização favorita
-        FloatingActionButton(
-            onClick = { 
-                if (favoriteLocations.size >= 7) {
-                    // Mostrar mensagem de limite atingido
-                    Toast.makeText(context, "Limite de 7 localizações favoritas atingido", Toast.LENGTH_SHORT).show()
-                } else {
-                    showAddFavoriteDialog = true
-                }
-            },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp),
-            backgroundColor = Color.White
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Adicionar localização favorita",
-                tint = Color.Black
-            )
         }
 
         // Recenter button
         FloatingActionButton(
             onClick = {
+                clearSearch()
                 currentLocation?.let { location ->
                     isFollowingUser = true
                     scope.launch {
@@ -640,13 +567,16 @@ fun MapScreen(navController: NavController) {
             Icon(
                 imageVector = Icons.Default.MyLocation,
                 contentDescription = "Centralizar no usuário",
-                tint = if (isFollowingUser) Color.Blue else Color.Black
+                tint = if (isFollowingUser) colorResource(id = R.color.blue_p) else Color.Black
             )
         }
 
         // Botão para mostrar localizações favoritas
         FloatingActionButton(
-            onClick = { showFavoritesPanel = !showFavoritesPanel },
+            onClick = { 
+                clearSearch()
+                showFavoritesPanel = !showFavoritesPanel 
+            },
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(16.dp),
@@ -655,7 +585,7 @@ fun MapScreen(navController: NavController) {
             Icon(
                 imageVector = Icons.Default.Star,
                 contentDescription = "Localizações favoritas",
-                tint = if (showFavoritesPanel) Color.Blue else Color.Black
+                tint = if (showFavoritesPanel) colorResource(id = R.color.blue_p) else Color.Black
             )
         }
 
@@ -699,7 +629,7 @@ fun MapScreen(navController: NavController) {
                                 )
                             }
                         }
-                        
+
                         if (favoriteLocations.isEmpty()) {
                             Text(
                                 text = "Nenhuma localização favorita adicionada",
@@ -727,7 +657,7 @@ fun MapScreen(navController: NavController) {
                                                 color = Color.Gray
                                             )
                                         }
-                                        
+
                                         // Botão de editar
                                         IconButton(
                                             onClick = {
@@ -739,10 +669,10 @@ fun MapScreen(navController: NavController) {
                                             Icon(
                                                 imageVector = Icons.Default.Edit,
                                                 contentDescription = "Editar favorito",
-                                                tint = Color.Blue
+                                                tint = colorResource(id = R.color.blue_p)
                                             )
                                         }
-                                        
+
                                         IconButton(
                                             onClick = {
                                                 scope.launch {
@@ -761,17 +691,17 @@ fun MapScreen(navController: NavController) {
                                             Icon(
                                                 imageVector = Icons.Default.LocationOn,
                                                 contentDescription = "Ir para localização",
-                                                tint = Color.Blue
+                                                tint = colorResource(id = R.color.blue_p)
                                             )
                                         }
-                                        
+
                                         IconButton(
                                             onClick = { removeFavoriteLocation(favorite.id) }
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Delete,
                                                 contentDescription = "Remover favorito",
-                                                tint = Color.Red
+                                                tint = colorResource(id = R.color.red_p)
                                             )
                                         }
                                     }
@@ -786,110 +716,10 @@ fun MapScreen(navController: NavController) {
             }
         }
 
-        // Diálogo para adicionar localização favorita
-        if (showAddFavoriteDialog) {
-            AlertDialog(
-                onDismissRequest = { 
-                    showAddFavoriteDialog = false
-                    newFavoriteName = ""
-                    selectedLocation = null
-                    isSelectingLocation = false
-                },
-                title = { Text("Adicionar localização favorita") },
-                text = {
-                    Column {
-                        if (selectedLocation == null) {
-                            TextField(
-                                value = newFavoriteName,
-                                onValueChange = { newFavoriteName = it },
-                                label = { Text("Nome da localização") },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "Clique em 'Continuar' e selecione a localização no mapa",
-                                color = Color.Gray,
-                                style = MaterialTheme.typography.caption
-                            )
-                        } else {
-                            Text(
-                                text = "Nome: $newFavoriteName",
-                                style = MaterialTheme.typography.subtitle1
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Localização selecionada:",
-                                style = MaterialTheme.typography.subtitle2
-                            )
-                            Text(
-                                text = "Lat: ${selectedLocation?.latitude}, Lng: ${selectedLocation?.longitude}",
-                                style = MaterialTheme.typography.body2,
-                                color = Color.Gray
-                            )
-                        }
-                    }
-                },
-                confirmButton = {
-                    if (selectedLocation == null) {
-                        TextButton(
-                            onClick = {
-                                if (newFavoriteName.isNotBlank()) {
-                                    isSelectingLocation = true
-                                    showAddFavoriteDialog = false
-                                }
-                            }
-                        ) {
-                            Text("Continuar")
-                        }
-                    } else {
-                        TextButton(
-                            onClick = {
-                                selectedLocation?.let { location ->
-                                    addFavoriteLocation(location, newFavoriteName)
-                                }
-                            }
-                        ) {
-                            Text("Adicionar")
-                        }
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = { 
-                            showAddFavoriteDialog = false
-                            newFavoriteName = ""
-                            selectedLocation = null
-                            isSelectingLocation = false
-                        }
-                    ) {
-                        Text("Cancelar")
-                    }
-                }
-            )
-        }
-
-        // Indicador de seleção de localização
-        if (isSelectingLocation) {
-            Card(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(16.dp),
-                backgroundColor = Color.White,
-                elevation = 4.dp
-            ) {
-                Text(
-                    text = "Selecione a localização no mapa",
-                    modifier = Modifier.padding(16.dp),
-                    color = Color.Red,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-
         // Diálogo de edição
         if (showEditDialog) {
             AlertDialog(
-                onDismissRequest = { 
+                onDismissRequest = {
                     showEditDialog = false
                     editingLocation = null
                     editingName = ""
@@ -908,13 +738,13 @@ fun MapScreen(navController: NavController) {
                             label = { Text("Nome da localização") },
                             modifier = Modifier.fillMaxWidth()
                         )
-                        
+
                         Spacer(modifier = Modifier.height(16.dp))
-                        
+
                         // Campo de pesquisa
                         TextField(
                             value = editSearchQuery,
-                            onValueChange = { newValue -> 
+                            onValueChange = { newValue ->
                                 editSearchQuery = newValue
                                 performSearch(newValue) { predictions, error ->
                                     editSearchResults = predictions
@@ -933,7 +763,7 @@ fun MapScreen(navController: NavController) {
                             trailingIcon = if (editSearchQuery.isNotEmpty()) {
                                 {
                                     IconButton(
-                                        onClick = { 
+                                        onClick = {
                                             editSearchQuery = ""
                                             editSearchResults = emptyList()
                                             editErrorMessage = null
@@ -1006,23 +836,14 @@ fun MapScreen(navController: NavController) {
                                             .padding(16.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.LocationOn,
-                                            contentDescription = null,
-                                            tint = Color.Gray,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(16.dp))
                                         Column {
                                             Text(
                                                 text = prediction.getPrimaryText(null).toString(),
-                                                fontWeight = FontWeight.Normal,
-                                                fontSize = 16.sp,
-                                                color = Color.Black
+                                                style = MaterialTheme.typography.subtitle1
                                             )
                                             Text(
                                                 text = prediction.getSecondaryText(null).toString(),
-                                                fontSize = 14.sp,
+                                                style = MaterialTheme.typography.caption,
                                                 color = Color.Gray
                                             )
                                         }
@@ -1037,20 +858,19 @@ fun MapScreen(navController: NavController) {
                             }
                         }
 
-                        // Ou selecionar no mapa
                         Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedButton(
-                            onClick = { isEditingLocation = true },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Ou selecione um local no mapa")
-                        }
 
-                        if (isEditingLocation) {
-                            Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = {
+                                isEditingLocation = true
+                                showEditDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(backgroundColor = Color(android.graphics.Color.parseColor("#1E90FF")))
+                        ) {
                             Text(
-                                text = "Clique no mapa para selecionar a nova localização",
-                                color = Color.Gray
+                                text = "Selecionar no mapa",
+                                color = Color.White
                             )
                         }
                     }
@@ -1059,47 +879,64 @@ fun MapScreen(navController: NavController) {
                     TextButton(
                         onClick = {
                             editingLocation?.let { location ->
-                                if (editingName.isNotBlank() && !isEditingLocation) {
-                                    updateFavoriteLocation(
-                                        location.id,
-                                        editingName,
-                                        location.location
-                                    )
-                                    showEditDialog = false
-                                    editingLocation = null
-                                    editingName = ""
-                                    editSearchQuery = ""
-                                    editSearchResults = emptyList()
-                                } else {
-                                    showEditDialog = false
-                                }
+                                updateFavoriteLocation(
+                                    location.id,
+                                    editingName,
+                                    location.location
+                                )
                             }
+                            showEditDialog = false
+                            editingLocation = null
+                            editingName = ""
                         }
                     ) {
-                        Text(if (!isEditingLocation) "Salvar" else "Continuar")
+                        Text(
+                            text = "Salvar",
+                            color = colorResource(id = R.color.blue_p)
+
+                        )
                     }
                 },
                 dismissButton = {
                     TextButton(
-                        onClick = { 
+                        onClick = {
                             showEditDialog = false
                             editingLocation = null
                             editingName = ""
                             isEditingLocation = false
-                            editSearchQuery = ""
-                            editSearchResults = emptyList()
                         }
                     ) {
-                        Text("Cancelar")
+                        Text(
+                            "Cancelar",
+                            color = colorResource(id = R.color.blue_p)
+                        )
                     }
                 }
             )
+        }
+
+        // Indicador de edição de localização
+        if (isEditingLocation) {
+            Card(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(16.dp),
+                backgroundColor = Color.White,
+                elevation = 4.dp
+            ) {
+                Text(
+                    text = "Selecione a nova localização no mapa",
+                    modifier = Modifier.padding(16.dp),
+                    color = Color.Red,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
 
 @SuppressLint("MissingPermission")
-private fun startLocationUpdates(
+fun startLocationUpdates(
     fusedLocationClient: FusedLocationProviderClient,
     locationRequest: LocationRequest,
     locationCallback: LocationCallback
@@ -1110,7 +947,7 @@ private fun startLocationUpdates(
             locationCallback,
             Looper.getMainLooper()
         )
-    } catch (e: SecurityException) {
-        e.printStackTrace()
+    } catch (e: Exception) {
+        println("Erro ao iniciar atualizações de localização: ${e.message}")
     }
-} 
+}
