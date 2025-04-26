@@ -5,6 +5,16 @@ plugins {
 }
 def compose_version = '1.4.3'
 
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(new FileInputStream(localPropertiesFile))
+}
+
+def MAPS_API_KEY = localProperties.getProperty("MAPS_API_KEY") ?: ""
+
+println "Forçado: MAPS_API_KEY = ${MAPS_API_KEY}"
+
 android {
     namespace 'com.example.appestudos'
     compileSdk 35
@@ -17,6 +27,10 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        manifestPlaceholders = [
+                googleMapsKey: MAPS_API_KEY
+        ]
     }
 
     buildTypes {
