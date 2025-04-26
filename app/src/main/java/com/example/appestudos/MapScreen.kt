@@ -102,9 +102,15 @@ fun MapScreen(navController: NavController) {
     // Inicializar Places API
     val placesClient = remember {
         try {
+            val applicationInfo = context.packageManager.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+            val apiKey = applicationInfo.metaData.getString("com.google.android.geo.API_KEY") ?: ""
+
             if (!Places.isInitialized()) {
+<<<<<<< HEAD
                 val apiKey = context.getString(R.string.google_maps_key)
                 Log.d("MapScreen", "Tentando inicializar Places API com chave: $apiKey")
+=======
+>>>>>>> master
                 Places.initialize(context, apiKey)
                 println("Places API inicializado com sucesso")
             }
