@@ -1,6 +1,5 @@
 package com.example.appestudos
 
-
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -15,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
@@ -36,22 +36,26 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.appestudos.ui.theme.NationalParkFamily
-import androidx.compose.material.IconButton as IconButton
-
+import com.example.appestudos.viewmodel.AuthViewModel
 
 @Composable
 fun cadastro(navController: NavController) {
     val context = LocalContext.current
+    val authViewModel: AuthViewModel = viewModel()
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
-    var passwordVisible1 by rememberSaveable { mutableStateOf(false) }
-    val dbHelper = remember { UserDatabaseHelper(context) }
+    var nome by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
+    var senha by rememberSaveable { mutableStateOf("") }
 
     Column(
         Modifier
@@ -63,8 +67,7 @@ fun cadastro(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         ConstraintLayout(
-            Modifier
-                .fillMaxSize()
+            Modifier.fillMaxSize()
         ) {
             val (topText, culm) = createRefs()
 
@@ -75,7 +78,7 @@ fun cadastro(navController: NavController) {
                     .padding(top = 16.dp, start = 32.dp)
                     .constrainAs(topText) {
                         linkTo(parent.top, culm.top, bias = 0.6f)
-                        linkTo(parent.start,parent.end, bias = 0f)
+                        linkTo(parent.start, parent.end, bias = 0f)
                     },
                 fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
@@ -90,31 +93,27 @@ fun cadastro(navController: NavController) {
                         bottom.linkTo(parent.bottom)
                     }
                     .background(
-                        color = Color(android.graphics.Color.parseColor("#e0e0e0")),
+                        color = Color(0xFFE0E0E0),
                         shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp)
                     )
                     .padding(32.dp)
             ) {
-                Text(text = "Login", fontSize = 20.sp,
+                // Campo Nome
+                Text(
+                    text = "Nome:",
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 16.dp),
                     color = Color.Black
                 )
-                var text by rememberSaveable { mutableStateOf("") }
-
                 TextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    label = { Text(text = "Escreva seu Login") },
+                    value = nome,
+                    onValueChange = { nome = it },
+                    label = { Text("Nome:") },
                     shape = RoundedCornerShape(10.dp),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         backgroundColor = Color.White,
                         focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        textColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
-                        focusedLabelColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
-                        unfocusedLabelColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
-                        cursorColor = Color(android.graphics.Color.parseColor("#5E5E5E"))
+                        unfocusedBorderColor = Color.Transparent
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -122,83 +121,59 @@ fun cadastro(navController: NavController) {
                         .background(Color.White, RoundedCornerShape(10.dp))
                 )
 
-                Text(text = "Senha", fontSize = 20.sp,
+                // Campo Email
+                Text(
+                    text = "Email:",
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 16.dp),
                     color = Color.Black
                 )
-                var text2 by rememberSaveable { mutableStateOf("") }
-                
                 TextField(
-                    value = text2,
-                    onValueChange = { text2 = it },
-                    label = { Text(text = "Escreva a sua senha") },
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email:") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        backgroundColor = Color.White,
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .background(Color.White, RoundedCornerShape(10.dp))
+                )
+
+                // Campo Senha
+                Text(
+                    text = "Senha:",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 16.dp),
+                    color = Color.Black
+                )
+                TextField(
+                    value = senha,
+                    onValueChange = { senha = it },
+                    label = { Text("Senha:") },
                     shape = RoundedCornerShape(10.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    visualTransformation = if (passwordVisible) {
-                        androidx.compose.ui.text.input.VisualTransformation.None
-                    } else {
-                        androidx.compose.ui.text.input.PasswordVisualTransformation()
-                    },
-                    trailingIcon =  {
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
                                 imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                                tint = Color(android.graphics.Color.parseColor("#5E5E5E"))
+                                contentDescription = null,
+                                tint = Color(0xFF5E5E5E)
                             )
                         }
                     },
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         backgroundColor = Color.White,
                         focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        textColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
-                        focusedLabelColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
-                        unfocusedLabelColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
-                        cursorColor = Color(android.graphics.Color.parseColor("#5E5E5E"))
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                        .background(Color.White, RoundedCornerShape(10.dp))
-                )
-
-                Text(text = "Confirme a Sua Senha", fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 16.dp),
-                    color = Color.Black
-                )
-                var text3 by rememberSaveable { mutableStateOf("") }
-
-                TextField(
-                    value = text3,
-                    onValueChange = { text3 = it },
-                    label = { Text(text = "Escreva a sua senha") },
-                    shape = RoundedCornerShape(10.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    visualTransformation = if (passwordVisible1) {
-                        androidx.compose.ui.text.input.VisualTransformation.None
-                    } else {
-                        androidx.compose.ui.text.input.PasswordVisualTransformation()
-                    },
-                    trailingIcon =  {
-                        IconButton(onClick = { passwordVisible1 = !passwordVisible1 }) {
-                            Icon(
-                                imageVector = if (passwordVisible1) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (passwordVisible1) "Hide password" else "Show password",
-                                tint = Color(android.graphics.Color.parseColor("#5E5E5E"))
-                            )
-                        }
-                    },
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        backgroundColor = Color.White,
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        textColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
-                        focusedLabelColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
-                        unfocusedLabelColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
-                        cursorColor = Color(android.graphics.Color.parseColor("#5E5E5E"))
+                        unfocusedBorderColor = Color.Transparent
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -209,32 +184,32 @@ fun cadastro(navController: NavController) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp, bottom = 16.dp), verticalAlignment = Alignment.CenterVertically
+                        .padding(top = 16.dp, bottom = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     Box(
                         modifier = Modifier
                             .height(1.dp)
                             .weight(1f)
-                            .background(Color(android.graphics.Color.parseColor("#4d4d4d")))
+                            .background(Color(0xFF4D4D4D))
                     )
                 }
 
-
                 Button(
                     onClick = {
-                        if (text.isEmpty() || text2.isEmpty() || text3.isEmpty()) {
-                            Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
-                        } else if (text2 != text3) {
-                            Toast.makeText(context, "As senhas não coincidem", Toast.LENGTH_SHORT).show()
-                        } else if (dbHelper.checkUsernameExists(text)) {
-                            Toast.makeText(context, "Nome de usuário já existe", Toast.LENGTH_SHORT).show()
-                        } else {
-                            if (dbHelper.addUser(text, text2)) {
-                                Toast.makeText(context, "Cadastro Criado com sucesso", Toast.LENGTH_SHORT).show()
-                                navController.navigate("login")
-                            } else {
-                                Toast.makeText(context, "Erro ao criar cadastro", Toast.LENGTH_SHORT).show()
+                        when {
+                            nome.isBlank() || email.isBlank() || senha.isBlank() -> {
+                                Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
+                            }
+                            else -> {
+                                authViewModel.register(
+                                    nome = nome,
+                                    email = email,
+                                    senha = senha
+                                ) { success, msg ->
+                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                    if (success) navController.navigate("login")
+                                }
                             }
                         }
                     },
@@ -246,7 +221,7 @@ fun cadastro(navController: NavController) {
                         backgroundColor = Color.Black
                     ),
                     shape = RoundedCornerShape(10.dp)
-                ){
+                ) {
                     Text(
                         text = "Cadastrar",
                         color = Color.White,
