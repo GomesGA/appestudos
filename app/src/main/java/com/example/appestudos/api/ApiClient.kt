@@ -6,8 +6,13 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
 object ApiClient {
-    // Base URL do seu backend. Se estiver rodando no emulador Android, use 10.0.2.2
-    const val BASE_URL = "http://10.0.2.2:8080/api"
+    // Antes (emulador):
+    // const val BASE_URL = "http://10.0.2.2:8080/api"
+
+    // Para dispositivo real com adb reverse:
+    const val BASE_URL = "http://localhost:8080/api"
+    // ou
+    // const val BASE_URL = "http://127.0.0.1:8080/api"
 
     val httpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
@@ -16,7 +21,7 @@ object ApiClient {
             })
         }
         install(Logging) {
-            level = LogLevel.BODY    // retire ou mude para NONE em produção
+            level = LogLevel.BODY
         }
     }
 }
