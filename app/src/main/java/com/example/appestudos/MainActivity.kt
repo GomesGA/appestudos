@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import com.example.appestudos.navigation.AppNavigation
 import com.example.appestudos.ui.theme.AppEstudosTheme
 import com.google.android.libraries.places.api.Places
 

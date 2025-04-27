@@ -47,6 +47,8 @@ fun AppEstudosTheme(
 
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
+
+
     }
 
     MaterialTheme(
