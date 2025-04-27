@@ -36,6 +36,12 @@ class FavoriteLocationDatabase(context: Context) : SQLiteOpenHelper(context, DAT
         onCreate(db)
     }
 
+    override fun onDowngrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        // descarta o esquema antigo e recria com onCreate()
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
+        onCreate(db)
+    }
+
     fun addFavoriteLocation(name: String, location: LatLng): Long {
         val db = this.writableDatabase
         val values = ContentValues().apply {
