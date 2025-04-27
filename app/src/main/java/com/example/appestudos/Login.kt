@@ -3,7 +3,6 @@ package com.example.appestudos
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,19 +57,31 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.appestudos.ui.theme.NationalParkFamily
+import com.example.appestudos.viewmodel.AuthViewModel
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.utils.EmptyContent.contentType
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
+import androidx.compose.ui.platform.LocalContext
+
 
 @Composable
 fun login(navController: NavController) {
     val context = LocalContext.current
+    val authViewModel: AuthViewModel = viewModel()
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
-    val dbHelper = remember { UserDatabaseHelper(context) }
     var text by rememberSaveable { mutableStateOf("") }
     var text2 by rememberSaveable { mutableStateOf("") }
     var passwordFieldFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
-    var loginButtonFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
 
     Column(
         Modifier
@@ -88,7 +99,7 @@ fun login(navController: NavController) {
             val (topText, culm) = createRefs()
 
             Text(
-                text = "Quick Learning",
+                text = "Quik Learning",
                 color = Color.White,
                 modifier = Modifier
                     .padding(top = 16.dp, start = 32.dp)
@@ -123,7 +134,7 @@ fun login(navController: NavController) {
                 TextField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text(text = "Escreva seu Login") },
+                    label = { Text(text = "Email") },
                     shape = RoundedCornerShape(10.dp),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text,
@@ -158,26 +169,22 @@ fun login(navController: NavController) {
                 TextField(
                     value = text2,
                     onValueChange = { text2 = it },
-                    label = { Text(text = "Escreva a sua senha") },
+                    label = { Text("Senha") },
                     shape = RoundedCornerShape(10.dp),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done
                     ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            if (text.isNotEmpty() && text2.isNotEmpty()) {
-                                if (dbHelper.checkUser(text, text2)) {
-                                    Toast.makeText(context, "Login Realizado com sucesso", Toast.LENGTH_SHORT).show()
-                                    navController.navigate("intro")
-                                } else {
-                                    Toast.makeText(context, "Usuário ou senha incorretos", Toast.LENGTH_SHORT).show()
-                                }
-                            } else {
-                                Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
+                    keyboardActions = KeyboardActions(onDone = {
+                        if (text.isNotBlank() && text2.isNotBlank()) {
+                            authViewModel.login(text, text2) { success, msg ->
+                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                if (success) navController.navigate("intro")
                             }
+                        } else {
+                            Toast.makeText(context, "Por Favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
                         }
-                    ),
+                    }),
                     visualTransformation = if (passwordVisible) {
                         VisualTransformation.None
                     } else {
@@ -379,18 +386,17 @@ fun login(navController: NavController) {
                 }
 
                 Button(
-                    onClick = {
-                        if (text.isEmpty() || text2.isEmpty()) {
-                            Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
-                        } else {
-                            if (dbHelper.checkUser(text, text2)) {
-                                Toast.makeText(context, "Login Realizado com sucesso", Toast.LENGTH_SHORT).show()
-                                navController.navigate("intro")
-                            } else {
-                                Toast.makeText(context, "Usuário ou senha incorretos", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    },
+                  onClick = {
+                      if (text.isNotBlank() && text2.isNotBlank()) {
+                          authViewModel.login(text, text2) { success, msg ->
+                              Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                              if (success) navController.navigate("intro")
+                          }
+                      } else {
+                          Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
+                      }
+                  },
+
                     modifier = Modifier
                         .padding(top = 10.dp, bottom = 16.dp)
                         .fillMaxWidth()
