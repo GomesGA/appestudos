@@ -9,8 +9,8 @@ import androidx.compose.ui.unit.sp
 import com.example.appestudos.R
 
 val NationalParkFamily = FontFamily(
-    Font(R.font.nationalpark_regular, FontWeight.Normal),
-    Font(R.font.nationalpark_bold, FontWeight.Bold)
+    Font(R.font.montserrat_regular, FontWeight.Normal),
+    Font(R.font.montserrat_bold, FontWeight.Bold)
 )
 
 // Set of Material typography styles to start with
