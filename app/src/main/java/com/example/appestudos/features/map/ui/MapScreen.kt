@@ -44,6 +44,7 @@ import com.google.maps.android.compose.*
 import kotlinx.coroutines.*
 import androidx.compose.ui.platform.LocalFocusManager
 import com.example.appestudos.R
+import com.example.appestudos.features.auth.data.UserManager
 
 data class FavoriteLocation(
     val id: Int,
@@ -91,7 +92,9 @@ fun MapScreen(navController: NavController) {
     
     // Carregar localizações favoritas do banco de dados
     LaunchedEffect(Unit) {
-        favoriteLocations = database.getAllFavoriteLocations()
+        UserManager.getCurrentUserId()?.let { userId ->
+            favoriteLocations = database.getAllFavoriteLocations(userId)
+        }
     }
 
     // Inicializar Places API
@@ -272,32 +275,29 @@ fun MapScreen(navController: NavController) {
         }
     }
 
-    // Função para adicionar localização favorita (mantida para uso na barra de pesquisa)
-    val addFavoriteLocation = { location: LatLng, name: String ->
-        if (database.getFavoriteLocationsCount() < 7) {
-            val id = database.addFavoriteLocation(name, location)
-            if (id != -1L) {
-                val newFavorite = FavoriteLocation(
-                    id = id.toInt(),
-                    name = name,
-                    location = location
-                )
-                favoriteLocations = favoriteLocations + newFavorite
-            }
+    // Função para adicionar localização favorita
+    fun addFavoriteLocation(name: String, location: LatLng) {
+        UserManager.getCurrentUserId()?.let { userId ->
+            database.addFavoriteLocation(userId, name, location)
+            favoriteLocations = database.getAllFavoriteLocations(userId)
+        } ?: run {
+            Toast.makeText(context, "Você precisa estar logado para adicionar localizações favoritas", Toast.LENGTH_SHORT).show()
         }
     }
 
     // Função para remover localização favorita
-    val removeFavoriteLocation = { id: Int ->
-        database.deleteFavoriteLocation(id)
-        favoriteLocations = favoriteLocations.filter { it.id != id }
+    fun removeFavoriteLocation(id: Int) {
+        UserManager.getCurrentUserId()?.let { userId ->
+            database.deleteFavoriteLocation(id)
+            favoriteLocations = database.getAllFavoriteLocations(userId)
+        }
     }
 
     // Função para atualizar localização favorita
-    val updateFavoriteLocation = { id: Int, name: String, location: LatLng ->
-        database.updateFavoriteLocation(id, name, location)
-        favoriteLocations = favoriteLocations.map {
-            if (it.id == id) it.copy(name = name, location = location) else it
+    fun updateFavoriteLocation(id: Int, name: String, location: LatLng) {
+        UserManager.getCurrentUserId()?.let { userId ->
+            database.updateFavoriteLocation(id, name, location)
+            favoriteLocations = database.getAllFavoriteLocations(userId)
         }
     }
 
@@ -471,28 +471,28 @@ fun MapScreen(navController: NavController) {
                                             placesClient?.fetchPlace(request)
                                                 ?.addOnSuccessListener { response ->
                                                     response.place.latLng?.let { latLng ->
-                                                        if (database.getFavoriteLocationsCount() < 7) {
-                                                            val id = database.addFavoriteLocation(
-                                                                prediction.getPrimaryText(null).toString(),
-                                                                latLng
-                                                            )
-                                                            if (id != -1L) {
-                                                                val newFavorite = FavoriteLocation(
-                                                                    id = id.toInt(),
-                                                                    name = prediction.getPrimaryText(null).toString(),
-                                                                    location = latLng
+                                                        UserManager.getCurrentUserId()?.let { userId ->
+                                                            if (database.getFavoriteLocationsCount(userId) < 7) {
+                                                                addFavoriteLocation(
+                                                                    prediction.getPrimaryText(null).toString(),
+                                                                    latLng
                                                                 )
-                                                                favoriteLocations = favoriteLocations + newFavorite
                                                                 Toast.makeText(
                                                                     context,
                                                                     "Localização adicionada aos favoritos",
                                                                     Toast.LENGTH_SHORT
                                                                 ).show()
+                                                            } else {
+                                                                Toast.makeText(
+                                                                    context,
+                                                                    "Limite de 7 localizações favoritas atingido",
+                                                                    Toast.LENGTH_SHORT
+                                                                ).show()
                                                             }
-                                                        } else {
+                                                        } ?: run {
                                                             Toast.makeText(
                                                                 context,
-                                                                "Limite de 7 localizações favoritas atingido",
+                                                                "Você precisa estar logado para adicionar localizações favoritas",
                                                                 Toast.LENGTH_SHORT
                                                             ).show()
                                                         }
