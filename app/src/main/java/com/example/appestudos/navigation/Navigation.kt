@@ -25,7 +25,7 @@ fun AppNavigation() {
         composable("RegisterScreen") {
             RegisterScreen(navController)
         }
-        composable("ChangePassord") {
+        composable("ChangePassword") {
             ChangePasswordScreen(navController)
         }
         composable("HomeScreen") {
