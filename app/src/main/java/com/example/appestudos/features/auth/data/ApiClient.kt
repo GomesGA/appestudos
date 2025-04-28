@@ -20,6 +20,8 @@ object ApiClient {
         install(ContentNegotiation) {
             json(Json {
                 ignoreUnknownKeys = true
+                isLenient = true
+                explicitNulls = false
             })
         }
         install(Logging) {

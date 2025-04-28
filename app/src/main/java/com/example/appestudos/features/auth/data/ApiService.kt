@@ -1,5 +1,6 @@
 package com.example.appestudos.features.auth.data
 
+import com.example.appestudos.features.auth.data.dto.AlterarSenhaResponseDTO
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -20,4 +21,10 @@ class ApiService(private val client: HttpClient) {
 
     suspend fun listarTiposPergunta(): ApiResponse<List<TipoPerguntaResponseDTO>> =
         client.get("${ApiClient.BASE_URL}/pergunta/tipos").body()
+
+    suspend fun alterarSenha(request: AlterarSenhaRequestDTO): ApiResponse<AlterarSenhaResponseDTO> =
+        client.put("${ApiClient.BASE_URL}/usuarios/atualizar-senha") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
 }
