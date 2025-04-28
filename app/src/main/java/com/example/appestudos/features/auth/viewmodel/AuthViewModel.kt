@@ -6,6 +6,7 @@ import com.example.appestudos.features.auth.data.ApiService
 import com.example.appestudos.features.auth.data.LoginRequestDTO
 import com.example.appestudos.features.auth.data.UsuarioRequestDTO
 import com.example.appestudos.features.auth.data.ApiClient
+import com.example.appestudos.features.auth.data.UserManager
 import kotlinx.coroutines.launch
 
 class AuthViewModel : ViewModel() {
@@ -23,6 +24,9 @@ class AuthViewModel : ViewModel() {
             try {
                 val response = apiService.login(LoginRequestDTO(email, senha))
                 if (response.success) {
+                    response.data?.usuario?.let { user ->
+                        UserManager.setCurrentUser(user)
+                    }
                     onResult(true, response.message ?: "Login realizado com sucesso")
                 } else {
                     onResult(false, response.message ?: "Usuário ou senha incorretos")
@@ -54,5 +58,9 @@ class AuthViewModel : ViewModel() {
                 onResult(false, "Erro de rede: ${e.localizedMessage}")
             }
         }
+    }
+
+    fun logout() {
+        UserManager.clearCurrentUser()
     }
 }

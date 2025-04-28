@@ -21,3 +21,19 @@ data class LoginResponseDTO(val usuario: UsuarioResponseDTO)
 
 @Serializable
 data class TipoPerguntaResponseDTO(val id: Int, val descricao: String)
+
+object UserManager {
+    private var currentUser: UsuarioResponseDTO? = null
+    
+    fun setCurrentUser(user: UsuarioResponseDTO) {
+        currentUser = user
+    }
+    
+    fun getCurrentUser(): UsuarioResponseDTO? = currentUser
+    
+    fun getCurrentUserId(): Int? = currentUser?.id
+    
+    fun clearCurrentUser() {
+        currentUser = null
+    }
+}

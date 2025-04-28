@@ -11,9 +11,10 @@ class FavoriteLocationDatabase(context: Context) : SQLiteOpenHelper(context, DAT
 
     companion object {
         private const val DATABASE_NAME = "favorite_locations.db"
-        private const val DATABASE_VERSION = 1
+        private const val DATABASE_VERSION = 2
         private const val TABLE_NAME = "favorite_locations"
         private const val COLUMN_ID = "id"
+        private const val COLUMN_USER_ID = "user_id"
         private const val COLUMN_NAME = "name"
         private const val COLUMN_LATITUDE = "latitude"
         private const val COLUMN_LONGITUDE = "longitude"
@@ -23,6 +24,7 @@ class FavoriteLocationDatabase(context: Context) : SQLiteOpenHelper(context, DAT
         val createTable = """
             CREATE TABLE $TABLE_NAME (
                 $COLUMN_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $COLUMN_USER_ID INTEGER NOT NULL,
                 $COLUMN_NAME TEXT NOT NULL,
                 $COLUMN_LATITUDE REAL NOT NULL,
                 $COLUMN_LONGITUDE REAL NOT NULL
@@ -32,19 +34,20 @@ class FavoriteLocationDatabase(context: Context) : SQLiteOpenHelper(context, DAT
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
-        onCreate(db)
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_USER_ID INTEGER NOT NULL DEFAULT 0")
+        }
     }
 
     override fun onDowngrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // descarta o esquema antigo e recria com onCreate()
         db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
         onCreate(db)
     }
 
-    fun addFavoriteLocation(name: String, location: LatLng): Long {
+    fun addFavoriteLocation(userId: Int, name: String, location: LatLng): Long {
         val db = this.writableDatabase
         val values = ContentValues().apply {
+            put(COLUMN_USER_ID, userId)
             put(COLUMN_NAME, name)
             put(COLUMN_LATITUDE, location.latitude)
             put(COLUMN_LONGITUDE, location.longitude)
@@ -52,12 +55,12 @@ class FavoriteLocationDatabase(context: Context) : SQLiteOpenHelper(context, DAT
         return db.insert(TABLE_NAME, null, values)
     }
 
-    fun getAllFavoriteLocations(): List<FavoriteLocation> {
+    fun getAllFavoriteLocations(userId: Int): List<FavoriteLocation> {
         val locations = mutableListOf<FavoriteLocation>()
         val db = this.readableDatabase
-        val query = "SELECT * FROM $TABLE_NAME"
+        val query = "SELECT * FROM $TABLE_NAME WHERE $COLUMN_USER_ID = ?"
         
-        db.rawQuery(query, null).use { cursor ->
+        db.rawQuery(query, arrayOf(userId.toString())).use { cursor ->
             while (cursor.moveToNext()) {
                 val id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ID))
                 val name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME))
@@ -81,9 +84,12 @@ class FavoriteLocationDatabase(context: Context) : SQLiteOpenHelper(context, DAT
         db.delete(TABLE_NAME, "$COLUMN_ID = ?", arrayOf(id.toString()))
     }
 
-    fun getFavoriteLocationsCount(): Int {
+    fun getFavoriteLocationsCount(userId: Int): Int {
         val db = this.readableDatabase
-        val cursor = db.rawQuery("SELECT COUNT(*) FROM $TABLE_NAME", null)
+        val cursor = db.rawQuery(
+            "SELECT COUNT(*) FROM $TABLE_NAME WHERE $COLUMN_USER_ID = ?",
+            arrayOf(userId.toString())
+        )
         return if (cursor.moveToFirst()) {
             cursor.getInt(0)
         } else {
