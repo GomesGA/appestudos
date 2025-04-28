@@ -8,7 +8,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.appestudos.R
 
-val NationalParkFamily = FontFamily(
+val MontserratFamily = FontFamily(
     Font(R.font.montserrat_regular, FontWeight.Normal),
     Font(R.font.montserrat_bold, FontWeight.Bold)
 )
@@ -23,4 +23,6 @@ val Typography = Typography(
         letterSpacing = 0.5.sp
     )
 )
+
+
 
