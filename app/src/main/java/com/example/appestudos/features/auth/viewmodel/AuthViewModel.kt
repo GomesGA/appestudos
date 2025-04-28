@@ -7,6 +7,7 @@ import com.example.appestudos.features.auth.data.LoginRequestDTO
 import com.example.appestudos.features.auth.data.UsuarioRequestDTO
 import com.example.appestudos.features.auth.data.ApiClient
 import com.example.appestudos.features.auth.data.UserManager
+import com.example.appestudos.features.auth.data.AlterarSenhaRequestDTO
 import kotlinx.coroutines.launch
 
 class AuthViewModel : ViewModel() {
@@ -53,6 +54,27 @@ class AuthViewModel : ViewModel() {
                     onResult(true, resp.message ?: "Cadastro realizado com sucesso")
                 } else {
                     onResult(false, resp.message ?: "Falha no cadastro")
+                }
+            } catch (e: Exception) {
+                onResult(false, "Erro de rede: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    fun alterarSenha(
+        email: String,
+        novaSenha: String,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val response = apiService.alterarSenha(
+                    AlterarSenhaRequestDTO(email = email, novaSenha = novaSenha)
+                )
+                if (response.success) {
+                    onResult(true, response.message ?: "Senha alterada com sucesso")
+                } else {
+                    onResult(false, response.message ?: "Falha ao alterar senha")
                 }
             } catch (e: Exception) {
                 onResult(false, "Erro de rede: ${e.localizedMessage}")

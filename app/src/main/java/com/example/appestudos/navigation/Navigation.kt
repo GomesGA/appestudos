@@ -9,7 +9,9 @@ import androidx.navigation.navArgument
 import com.example.appestudos.features.auth.ui.ChangePasswordScreen
 import com.example.appestudos.features.auth.ui.LoginScreen
 import com.example.appestudos.features.auth.ui.RegisterScreen
+import com.example.appestudos.features.flashcards.ui.CreateFlashcardScreen
 import com.example.appestudos.features.flashcards.ui.CreateGroupScreen
+import com.example.appestudos.features.flashcards.ui.FlashcardDetailScreen
 import com.example.appestudos.features.flashcards.ui.FlashcardGroupScreen
 import com.example.appestudos.features.intro.ui.HomeScreen
 import com.example.appestudos.features.map.ui.MapScreen
@@ -25,7 +27,7 @@ fun AppNavigation() {
         composable("RegisterScreen") {
             RegisterScreen(navController)
         }
-        composable("ChangePassord") {
+        composable("ChangePassword") {
             ChangePasswordScreen(navController)
         }
         composable("HomeScreen") {
@@ -35,19 +37,34 @@ fun AppNavigation() {
             MapScreen(navController)
         }
 
-        composable("createGroup") {
-            CreateGroupScreen(navController)
+        composable("addFlashcard") {
+            CreateFlashcardScreen(navController)
         }
+
         composable(
-            "flashcardGroup/{groupId}/{groupName}",
+            "flashcardDetail/{title}/{content}",
             arguments = listOf(
-                navArgument("groupId") { type = NavType.IntType },
-                navArgument("groupName") { type = NavType.StringType }
+                navArgument("title"){ type = NavType.StringType },
+                navArgument("content"){ type = NavType.StringType }
             )
+        ) { back ->
+            val t = back.arguments!!.getString("title")!!
+            val c = back.arguments!!.getString("content")!!
+            FlashcardDetailScreen(navController, t, c)
+        }
+
+        composable(
+            route = "flashcardGroup/{groupId}/{groupName}",
+            arguments = listOf(navArgument("groupId") { type = NavType.IntType })
         ) { backStackEntry ->
-            val groupId = backStackEntry.arguments?.getInt("groupId") ?: 0
-            val groupName = backStackEntry.arguments?.getString("groupName") ?: ""
-            FlashcardGroupScreen(navController, groupId, groupName)
+            val gid = backStackEntry.arguments?.getInt("groupId")!!
+            val gname = backStackEntry.arguments?.getString("groupName")!!
+            FlashcardGroupScreen(navController, gid, gname)
+        }
+
+
+        composable("createFlashcard") {
+            CreateFlashcardScreen(navController)
         }
     }
 } 

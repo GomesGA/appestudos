@@ -40,10 +40,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.appestudos.R
-import com.example.appestudos.UserDatabaseHelper
+import com.example.appestudos.features.auth.viewmodel.AuthViewModel
 import com.example.appestudos.ui.theme.MontserratFamily
 
 @Composable
@@ -51,7 +52,7 @@ fun ChangePasswordScreen(navController: NavController) {
     val context = LocalContext.current
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     var passwordVisible1 by rememberSaveable { mutableStateOf(false) }
-    val dbHelper = remember { UserDatabaseHelper(context) }
+    val viewModel: AuthViewModel = viewModel()
 
     Column(
         Modifier
@@ -95,17 +96,17 @@ fun ChangePasswordScreen(navController: NavController) {
                     )
                     .padding(32.dp)
             ) {
-                Text(text = "Login", fontSize = 20.sp,
+                Text(text = "Email", fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 16.dp),
                     color = Color.Black
                 )
-                var text by rememberSaveable { mutableStateOf("") }
+                var email by rememberSaveable { mutableStateOf("") }
 
                 TextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    label = { Text(text = "Escreva seu Login") },
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text(text = "Digite seu email") },
                     shape = RoundedCornerShape(10.dp),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         backgroundColor = Color.White,
@@ -122,17 +123,17 @@ fun ChangePasswordScreen(navController: NavController) {
                         .background(Color.White, RoundedCornerShape(10.dp))
                 )
 
-                Text(text = "Senha", fontSize = 20.sp,
+                Text(text = "Nova Senha", fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 16.dp),
                     color = Color.Black
                 )
-                var text2 by rememberSaveable { mutableStateOf("") }
+                var novaSenha by rememberSaveable { mutableStateOf("") }
 
                 TextField(
-                    value = text2,
-                    onValueChange = { text2 = it },
-                    label = { Text(text = "Escreva a sua nova senha") },
+                    value = novaSenha,
+                    onValueChange = { novaSenha = it },
+                    label = { Text(text = "Digite sua nova senha") },
                     shape = RoundedCornerShape(10.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     visualTransformation = if (passwordVisible) {
@@ -164,17 +165,17 @@ fun ChangePasswordScreen(navController: NavController) {
                         .background(Color.White, RoundedCornerShape(10.dp))
                 )
 
-                Text(text = "Confirme a Sua Senha", fontSize = 20.sp,
+                Text(text = "Confirme a Nova Senha", fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 16.dp),
                     color = Color.Black
                 )
-                var text3 by rememberSaveable { mutableStateOf("") }
+                var confirmarSenha by rememberSaveable { mutableStateOf("") }
 
                 TextField(
-                    value = text3,
-                    onValueChange = { text3 = it },
-                    label = { Text(text = "Escreva a sua nova senha") },
+                    value = confirmarSenha,
+                    onValueChange = { confirmarSenha = it },
+                    label = { Text(text = "Confirme sua nova senha") },
                     shape = RoundedCornerShape(10.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     visualTransformation = if (passwordVisible1) {
@@ -223,18 +224,16 @@ fun ChangePasswordScreen(navController: NavController) {
 
                 Button(
                     onClick = {
-                        if (text.isEmpty() || text2.isEmpty() || text3.isEmpty()) {
+                        if (email.isEmpty() || novaSenha.isEmpty() || confirmarSenha.isEmpty()) {
                             Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
-                        } else if (text2 != text3) {
+                        } else if (novaSenha != confirmarSenha) {
                             Toast.makeText(context, "As senhas não coincidem", Toast.LENGTH_SHORT).show()
-                        } else if (!dbHelper.checkUsernameExists(text)) {
-                            Toast.makeText(context, "Usuário não encontrado", Toast.LENGTH_SHORT).show()
                         } else {
-                            if (dbHelper.updatePassword(text, text2)) {
-                                Toast.makeText(context, "Senha alterada com sucesso", Toast.LENGTH_SHORT).show()
-                                navController.navigate("LoginScreen")
-                            } else {
-                                Toast.makeText(context, "Erro ao alterar senha", Toast.LENGTH_SHORT).show()
+                            viewModel.alterarSenha(email, novaSenha) { success, message ->
+                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                if (success) {
+                                    navController.navigate("LoginScreen")
+                                }
                             }
                         }
                     },
@@ -248,9 +247,9 @@ fun ChangePasswordScreen(navController: NavController) {
                     shape = RoundedCornerShape(10.dp)
                 ){
                     Text(
-                        text = "Trocar Senha",
+                        text = "Alterar Senha",
                         color = Color.White,
-                        fontSize = 22.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }

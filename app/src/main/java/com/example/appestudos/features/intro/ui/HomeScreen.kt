@@ -1,38 +1,25 @@
 package com.example.appestudos.features.intro.ui
 
 import android.widget.Toast
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.Business
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Computer
-import androidx.compose.material.icons.filled.DesktopWindows
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.Science
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,8 +29,12 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.ui.text.font.FontWeight
+import com.example.appestudos.features.flashcards.model.FlashcardGroup
 import java.net.URLEncoder
 
+// Modelo para flashcards privados
+// (se ainda desejar exibir uma lista própria)
 data class Flashcard(
     val id: Int,
     val title: String,
@@ -53,52 +44,25 @@ data class Flashcard(
 
 @Composable
 fun HomeScreen(navController: NavController) {
-    val context = LocalContext.current
     val scaffoldState = rememberScaffoldState()
-    
-    // Sample flashcards
-    val publicFlashcards = remember {
-        listOf(
-            Flashcard(1, "Programação", Icons.Filled.Code, true),
-            Flashcard(2, "Matemática", Icons.Filled.Calculate, true),
-            Flashcard(3, "Ciências", Icons.Filled.Science, true),
-            Flashcard(4, "História", Icons.Filled.Book, true),
-            Flashcard(5, "Geografia", Icons.Filled.Public, true),
-            Flashcard(6, "Línguas", Icons.Filled.Language, true),
-            Flashcard(7, "Tecnologia", Icons.Filled.Computer, true),
-            Flashcard(8, "Negócios", Icons.Filled.Business, true)
-        )
-    }
-
-    val privateFlashcards = remember {
-        listOf(
-            Flashcard(5, "Inglês", Icons.Filled.Code, false),
-            Flashcard(6, "Espanhol", Icons.Filled.DesktopWindows, false)
-        )
-    }
-
-    val statusBarPadding = WindowInsets.statusBars.asPaddingValues()
-    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues()
+    val navigationBarInsets = WindowInsets.navigationBars.asPaddingValues()
 
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = statusBarPadding.calculateTopPadding()),
-        bottomBar = {
-            MyButtonBar(navController)
-        },
+            .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()),
+        scaffoldState = scaffoldState,
+        bottomBar = { MyButtonBar(navController) },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate("createGroup") },
+                onClick = { navController.navigate("createFlashcard") },
                 contentColor = Color.White,
                 backgroundColor = Color.Black
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
-                    contentDescription = "Adicionar",
-                    modifier = Modifier
-                        .height(30.dp)
-                        .width(30.dp)
+                    contentDescription = "Adicionar Flashcard",
+                    modifier = Modifier.size(30.dp)
                 )
             }
         },
@@ -112,102 +76,120 @@ fun HomeScreen(navController: NavController) {
                 .verticalScroll(rememberScrollState())
         ) {
             NameProfile()
-            Publicos()
-            FlashcardList(flashcards = publicFlashcards, isPublic = true, navController = navController)
+
+            // Título dos grupos
+            Text(
+                text = "Grupos de Flashcards",
+                color = Color.Black,
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp)
+            )
+
+            // Grid de grupos padrão
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                modifier = Modifier
+                    .height(200.dp)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(4.dp)
+            ) {
+                items(FlashcardGroup.values()) { group ->
+                    Column(
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .size(80.dp)
+                            .background(Color.Black, shape = RoundedCornerShape(12.dp))
+                            .clickable {
+                                val encoded = URLEncoder.encode(group.title, "UTF-8")
+                                navController.navigate("flashcardGroup/${group.id}/$encoded")
+                            },
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = group.icon,
+                            contentDescription = group.title,
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Text(
+                            text = group.title,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(top = 4.dp),
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
+
+            // Se desejar manter seção de flashcards privados
             Privados()
-            FlashcardList(flashcards = privateFlashcards, isPublic = false, navController = navController)
-            // Add bottom spacing to ensure content doesn't get hidden behind navigation bar
-            Spacer(modifier = Modifier.height(navigationBarPadding.calculateBottomPadding()))
+            val privateFlashcards = listOf(
+                Flashcard(5, "Inglês", Icons.Filled.Code, false),
+                Flashcard(6, "Espanhol", Icons.Filled.DesktopWindows, false)
+            )
+            FlashcardList(
+                flashcards = privateFlashcards,
+                isPublic = false,
+                navController = navController
+            )
+
+            Spacer(modifier = Modifier.height(navigationBarInsets.calculateBottomPadding()))
         }
     }
 }
 
 @Composable
-fun NameProfile(){
+fun NameProfile() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 32.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(imageVector = Icons.Filled.Menu,
+        Icon(
+            imageVector = Icons.Filled.Menu,
             contentDescription = null,
             modifier = Modifier
                 .size(35.dp)
-                .clickable {  }
-
+                .clickable { }
         )
-
         Spacer(modifier = Modifier.weight(1f))
-
-        Image(imageVector = Icons.Filled.Person,
+        Icon(
+            imageVector = Icons.Filled.Person,
             contentDescription = null,
             modifier = Modifier
-                .width(35.dp)
-                .height(35.dp)
-                .clickable {  }
-
+                .size(35.dp)
+                .clickable { }
         )
     }
 }
 
 @Composable
-fun Publicos(){
-
-    Text("Flashcard Públicos",
-        color = Color.Black,
-        fontSize = 26.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp, bottom = 16.dp)
-    )
-
-}
-
-@Composable
-fun FlashcardList(flashcards: List<Flashcard>, isPublic: Boolean, navController: NavController) {
+fun FlashcardList(
+    flashcards: List<Flashcard>,
+    isPublic: Boolean,
+    navController: NavController
+) {
+    val context = LocalContext.current
     Column(modifier = Modifier.fillMaxWidth()) {
-        // Primeira linha
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            flashcards.take(4).forEach { flashcard ->
-                FlashcardItem(
-                    flashcard = flashcard,
-                    modifier = Modifier
-                        .weight(1f, fill = true)
-                        .clickable {
-                            if (isPublic) {
-                                val groupName = URLEncoder.encode(flashcard.title, "UTF-8")
-                                navController.navigate("flashcardGroup/${flashcard.id}/${groupName}")
-                            }
+        flashcards.forEach { flashcard ->
+            FlashcardItem(
+                flashcard = flashcard,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+                    .clickable {
+                        if (!isPublic) {
+                            Toast.makeText(context, flashcard.title, Toast.LENGTH_SHORT).show()
                         }
-                )
-            }
-        }
-        
-        // Segunda linha (se for público)
-        if (isPublic) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                flashcards.drop(4).take(4).forEach { flashcard ->
-                    FlashcardItem(
-                        flashcard = flashcard,
-                        modifier = Modifier
-                            .weight(1f, fill = true)
-                            .clickable {
-                                val groupName = URLEncoder.encode(flashcard.title, "UTF-8")
-                                navController.navigate("flashcardGroup/${flashcard.id}/${groupName}")
-                            }
-                    )
-                }
-            }
+                    }
+            )
         }
     }
 }
@@ -217,83 +199,68 @@ fun FlashcardItem(
     flashcard: Flashcard,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    Row(
         modifier = modifier
-            .padding(horizontal = 4.dp)
-            .height(85.dp)
-            .background(
-                color = Color.Black,
-                shape = RoundedCornerShape(12.dp)
-            )
-            .padding(vertical = 8.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = flashcard.icon,
             contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(32.dp)
+            tint = Color.Black,
+            modifier = Modifier.size(24.dp)
         )
+        Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = flashcard.title,
-            fontSize = 12.sp,
-            modifier = Modifier.padding(top = 4.dp, start = 4.dp, end = 4.dp),
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            maxLines = 1
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium
         )
     }
 }
 
 @Composable
-fun Privados(){
-
-    Text("Flashcard Privados",
+fun Privados() {
+    Text(
+        "Flashcards Privados",
         color = Color.Black,
         fontSize = 26.sp,
         fontWeight = FontWeight.Bold,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 16.dp, bottom = 16.dp)
+            .padding(vertical = 16.dp)
     )
 }
 
 @Composable
-fun MyButtonBar(navController: NavController){
-    val bottomMenuItemsList = prepareButtomMenu()
-    val contextForToast = LocalContext.current.applicationContext
-    var selectItem by remember {
-        mutableStateOf("home")
-    }
-    BottomAppBar (
+fun MyButtonBar(navController: NavController) {
+    val context = LocalContext.current
+    val items = listOf(
+        BottomMenuItem("Home", Icons.Filled.Home),
+        BottomMenuItem("Lupa", Icons.Filled.Search),
+        BottomMenuItem("Maps", Icons.Filled.LocationOn)
+    )
+    var selected by remember { mutableStateOf("Home") }
+
+    BottomAppBar(
         cutoutShape = CircleShape,
         backgroundColor = Color.White,
         elevation = 3.dp,
         modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
     ) {
-        bottomMenuItemsList.forEachIndexed{ index, bottomMenuItem ->
+        items.forEach { item ->
             BottomNavigationItem(
-                selected = selectItem==bottomMenuItem.label,
+                selected = selected == item.label,
                 onClick = {
-                    selectItem=bottomMenuItem.label
-                    when (bottomMenuItem.label) {
-                        "Maps" -> navController.navigate("map")
-                        else -> Toast.makeText(contextForToast, bottomMenuItem.label, Toast.LENGTH_SHORT).show()
-                    }
+                    selected = item.label
+                    if (item.label == "Maps") navController.navigate("map")
+                    else Toast.makeText(context, item.label, Toast.LENGTH_SHORT).show()
                 },
                 icon = {
-                    Icon(
-                        imageVector = bottomMenuItem.icon,
-                        contentDescription = bottomMenuItem.label,
-                        tint = Color.Black,
-                        modifier = Modifier
-                            .height(30.dp)
-                            .width(30.dp)
-                    )
+                    Icon(item.icon, contentDescription = item.label, modifier = Modifier.size(30.dp), tint = Color.Black)
                 },
-                alwaysShowLabel = true,
-                enabled = true
+                alwaysShowLabel = true
             )
         }
     }
@@ -301,35 +268,7 @@ fun MyButtonBar(navController: NavController){
 
 data class BottomMenuItem(val label: String, val icon: ImageVector)
 
-@Composable
-fun prepareButtomMenu(): List<BottomMenuItem>{
-    val bottomMenuItemList = arrayListOf<BottomMenuItem>()
-
-    bottomMenuItemList.add(
-        BottomMenuItem(
-            label = "Home",
-            icon = Icons.Filled.Home
-        )
-    )
-
-    bottomMenuItemList.add(
-        BottomMenuItem(
-            label = "Lupa",
-            icon = Icons.Filled.Search
-        )
-    )
-
-    bottomMenuItemList.add(
-        BottomMenuItem(
-            label = "Maps",
-            icon = Icons.Filled.LocationOn
-        )
-    )
-
-    return bottomMenuItemList
-}
-
-@Preview
+@Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
     HomeScreen(navController = rememberNavController())
