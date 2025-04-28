@@ -15,6 +15,7 @@ uiTextGoogleFonts = "1.7.8"
 navigationCompose = "2.8.9"
 firebaseCrashlyticsBuildtools = "3.0.3"
 firebaseDataconnect = "16.0.1"
+foundationAndroid = "1.7.2"
 
 [libraries]
 androidx-activity-compose-v172 = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
@@ -38,6 +39,7 @@ androidx-tv-material = { group = "androidx.tv", name = "tv-material", version.re
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
 firebase-dataconnect = { group = "com.google.firebase", name = "firebase-dataconnect", version.ref = "firebaseDataconnect" }
+androidx-foundation-android = { group = "androidx.compose.foundation", name = "foundation-android", version.ref = "foundationAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
