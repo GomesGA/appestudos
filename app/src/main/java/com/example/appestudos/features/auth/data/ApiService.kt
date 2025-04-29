@@ -1,6 +1,5 @@
 package com.example.appestudos.features.auth.data
 
-import com.example.appestudos.features.auth.data.dto.AlterarSenhaResponseDTO
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*

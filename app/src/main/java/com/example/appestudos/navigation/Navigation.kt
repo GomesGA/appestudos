@@ -1,6 +1,7 @@
 package com.example.appestudos.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -15,10 +16,20 @@ import com.example.appestudos.features.flashcards.ui.FlashcardDetailScreen
 import com.example.appestudos.features.flashcards.ui.FlashcardGroupScreen
 import com.example.appestudos.features.intro.ui.HomeScreen
 import com.example.appestudos.features.map.ui.MapScreen
+import com.example.appestudos.features.auth.data.UserManager
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+
+    // Verifica se existe um usuário logado e redireciona se necessário
+    LaunchedEffect(Unit) {
+        if (UserManager.getCurrentUser() != null) {
+            navController.navigate("HomeScreen") {
+                popUpTo("LoginScreen") { inclusive = true }
+            }
+        }
+    }
 
     NavHost(navController = navController, startDestination = "LoginScreen") {
         composable("LoginScreen") {
@@ -61,7 +72,6 @@ fun AppNavigation() {
             val gname = backStackEntry.arguments?.getString("groupName")!!
             FlashcardGroupScreen(navController, gid, gname)
         }
-
 
         composable("createFlashcard") {
             CreateFlashcardScreen(navController)
