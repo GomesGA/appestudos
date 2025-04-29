@@ -30,7 +30,9 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.DpOffset
 import com.example.appestudos.features.flashcards.model.FlashcardGroup
+import com.example.appestudos.features.auth.data.UserManager
 import java.net.URLEncoder
 
 // Modelo para flashcards privados
@@ -57,7 +59,7 @@ fun HomeScreen(navController: NavController) {
             FloatingActionButton(
                 onClick = { navController.navigate("createFlashcard") },
                 contentColor = Color.White,
-                backgroundColor = Color.Black
+                backgroundColor = Color(0xFF01380b)
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
@@ -75,18 +77,7 @@ fun HomeScreen(navController: NavController) {
                 .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            NameProfile()
-
-            // Título dos grupos
-            Text(
-                text = "Grupos de Flashcards",
-                color = Color.Black,
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
-            )
+            NameProfile(navController)
 
             // Grid de grupos padrão
             LazyVerticalGrid(
@@ -101,7 +92,7 @@ fun HomeScreen(navController: NavController) {
                         modifier = Modifier
                             .padding(4.dp)
                             .size(80.dp)
-                            .background(Color.Black, shape = RoundedCornerShape(12.dp))
+                            .background(Color(0xFF01380b), shape = RoundedCornerShape(12.dp))
                             .clickable {
                                 val encoded = URLEncoder.encode(group.title, "UTF-8")
                                 navController.navigate("flashcardGroup/${group.id}/$encoded")
@@ -145,28 +136,77 @@ fun HomeScreen(navController: NavController) {
 }
 
 @Composable
-fun NameProfile() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 32.dp),
-        verticalAlignment = Alignment.CenterVertically
+fun NameProfile(navController: NavController) {
+    var showMenu by remember { mutableStateOf(false) }
+    val currentUser = UserManager.getCurrentUser()
+
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.TopEnd
     ) {
-        Icon(
-            imageVector = Icons.Filled.Menu,
-            contentDescription = null,
+        Row(
             modifier = Modifier
-                .size(35.dp)
-                .clickable { }
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Icon(
-            imageVector = Icons.Filled.Person,
-            contentDescription = null,
-            modifier = Modifier
-                .size(35.dp)
-                .clickable { }
-        )
+                .fillMaxWidth()
+                .padding(top = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Título dos grupos
+            Text(
+                text = "Grupos de Flashcards",
+                color = Color.Black,
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = 16.dp)
+            )
+            Box {
+                Icon(
+                    imageVector = Icons.Filled.Person,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(35.dp)
+                        .clickable { showMenu = true }
+                )
+
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false },
+                    offset = DpOffset(x = 0.dp, y = 8.dp),
+                    modifier = Modifier
+                        .width(200.dp)
+                        .background(Color.White, RoundedCornerShape(8.dp))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Olá, ${currentUser?.nome ?: "Erro"}",
+                            style = MaterialTheme.typography.h6,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        Divider()
+                        DropdownMenuItem(onClick = { /* TODO: Navigate to profile */ }) {
+                            Text("Perfil")
+                        }
+                        DropdownMenuItem(onClick = { /* TODO: Navigate to settings */ }) {
+                            Text("Configurações")
+                        }
+                        Divider()
+                        DropdownMenuItem(onClick = {
+                            navController.navigate("LoginScreen") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                            UserManager.clearCurrentUser()
+                        }) {
+                            Text("Sair")
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

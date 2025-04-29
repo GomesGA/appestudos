@@ -74,11 +74,19 @@ fun LoginScreen(navController: NavController) {
     var text2 by rememberSaveable { mutableStateOf("") }
     var passwordFieldFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
 
+    // Função para navegar para a tela inicial após login bem-sucedido
+    fun navigateToHome() {
+        navController.navigate("HomeScreen") {
+            // Remove todas as telas anteriores da pilha
+            popUpTo("LoginScreen") { inclusive = true }
+        }
+    }
+
     Column(
         Modifier
             .fillMaxSize()
             .paint(
-                painterResource(id = R.drawable.background_page),
+                painterResource(id = R.drawable.teste1),
                 contentScale = ContentScale.FillWidth
             ),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -87,21 +95,7 @@ fun LoginScreen(navController: NavController) {
             Modifier
                 .fillMaxSize()
         ) {
-            val (topText, culm) = createRefs()
-
-            Text(
-                text = "Quik Learning",
-                color = Color.White,
-                modifier = Modifier
-                    .padding(top = 16.dp, start = 32.dp)
-                    .constrainAs(topText) {
-                        linkTo(parent.top, culm.top, bias = 0.6f)
-                        linkTo(parent.start,parent.end, bias = 0f)
-                    },
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = MontserratFamily
-            )
+            val (culm) = createRefs()
 
             Column(
                 modifier = Modifier
@@ -170,7 +164,7 @@ fun LoginScreen(navController: NavController) {
                         if (text.isNotBlank() && text2.isNotBlank()) {
                             authViewModel.login(text, text2) { success, msg ->
                                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                                if (success) navController.navigate("HomeScreen")
+                                if (success) navigateToHome()
                             }
                         } else {
                             Toast.makeText(context, "Por Favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
@@ -377,19 +371,18 @@ fun LoginScreen(navController: NavController) {
                 }
 
                 Button(
-                  onClick = {
-                      if (text.isNotBlank() && text2.isNotBlank()) {
-                          authViewModel.login(text, text2) { success, msg ->
-                              Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                              if (success) navController.navigate("HomeScreen")
-                          }
-                      } else {
-                          Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
-                      }
-                  },
-
+                    onClick = {
+                        if (text.isNotBlank() && text2.isNotBlank()) {
+                            authViewModel.login(text, text2) { success, msg ->
+                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                if (success) navigateToHome()
+                            }
+                        } else {
+                            Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
+                        }
+                    },
                     modifier = Modifier
-                        .padding(top = 10.dp, bottom = 16.dp)
+                        .padding(top = 3.dp, bottom = 3.dp)
                         .fillMaxWidth()
                         .height(55.dp),
                     colors = ButtonDefaults.buttonColors(
