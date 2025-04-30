@@ -1,0 +1,12 @@
+feat(app): implementar fluxo completo de flashcards com grupos, criação, persistência e tela de detalhes
+
+- Substitui listagem de “flashcards públicos” por grid de grupos (FlashcardGroup) na HomeScreen
+- Cria tela CreateFlashcardScreen para seleção de grupo, título e conteúdo de estudo
+- Adiciona persistência em SQLite:
+  • FlashcardDbHelper com onCreate e onUpgrade (ALTER TABLE para coluna content)
+  • FlashcardRepository para inserir e consultar flashcards
+- Desenvolve FlashcardViewModel (AndroidViewModel) para carregar/inserir via repository
+- Ajusta NavHost com rotas: home, createFlashcard, flashcardGroup/{groupId}/{groupName} e flashcardDetail/{title}/{content}
+- Cria FlashcardGroupScreen para listar cartões por grupo e FlashcardDetailScreen para mostrar conteúdo completo
+- Refatora componentes de UI para usar cores de MaterialTheme (primary, primaryVariant, secondary, background, onPrimary, onSecondary, onBackground)
+- Atualiza entidades e DAO/UI models para incluir o campo content

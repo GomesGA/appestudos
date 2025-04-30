@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -19,6 +20,7 @@ import com.example.appestudos.features.flashcards.viewmodel.FlashcardEntity
 import com.example.appestudos.features.flashcards.viewmodel.FlashcardViewModel
 import com.example.appestudos.features.flashcards.model.FlashcardGroup
 import java.net.URLEncoder
+import java.net.URLDecoder
 
 @Composable
 fun FlashcardGroupScreen(
@@ -55,7 +57,7 @@ fun FlashcardGroupScreen(
                 .fillMaxSize()
         ) {
             items(cards) { card ->
-                FlashcardListItem(navController, card)
+                FlashcardListItem(navController, card, viewModel)
             }
         }
     }
@@ -64,30 +66,75 @@ fun FlashcardGroupScreen(
 @Composable
 fun FlashcardListItem(
     navController: NavController,
-    card: FlashcardEntity
+    card: FlashcardEntity,
+    viewModel: FlashcardViewModel = viewModel()
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
     val icon: ImageVector = FlashcardGroup.valueOf(card.iconName).icon
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Confirmar exclusão") },
+            text = { Text("Deseja realmente excluir o flashcard '${card.title}'?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.delete(card.id)
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("Excluir")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
-            .clickable {
-                val titleEncoded = URLEncoder.encode(card.title, "UTF-8")
-                val contentEncoded = URLEncoder.encode(card.content, "UTF-8")
-                navController.navigate("flashcardDetail/$titleEncoded/$contentEncoded")
-            },
+            .padding(8.dp),
         backgroundColor = MaterialTheme.colors.secondary,
         contentColor = MaterialTheme.colors.onSecondary,
         elevation = 6.dp
     ) {
-        Row(modifier = Modifier.padding(16.dp)) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = card.title,
-                style = MaterialTheme.typography.h6,
-                color = MaterialTheme.colors.onSecondary
-            )
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .clickable {
+                    val titleEncoded = URLEncoder.encode(card.title, "UTF-8")
+                    val contentEncoded = URLEncoder.encode(card.content, "UTF-8")
+                    navController.navigate("flashcardDetail/$titleEncoded/$contentEncoded")
+                },
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = card.title,
+                    style = MaterialTheme.typography.h6,
+                    color = MaterialTheme.colors.onSecondary
+                )
+            }
+            
+            IconButton(
+                onClick = { showDeleteDialog = true }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Excluir flashcard",
+                    tint = MaterialTheme.colors.onSecondary
+                )
+            }
         }
     }
 }
@@ -98,10 +145,13 @@ fun FlashcardDetailScreen(
     title: String,
     content: String
 ) {
+    val decodedTitle = URLDecoder.decode(title, "UTF-8")
+    val decodedContent = URLDecoder.decode(content, "UTF-8")
+    
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(title) },
+                title = { Text(decodedTitle) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
@@ -122,7 +172,7 @@ fun FlashcardDetailScreen(
                 .padding(16.dp)
         ) {
             Text(
-                text = content,
+                text = decodedContent,
                 style = MaterialTheme.typography.body1,
                 color = MaterialTheme.colors.onBackground
             )
