@@ -45,4 +45,12 @@ class FlashcardViewModel(app: Application) : AndroidViewModel(app) {
             repo.add(f)
         }
     }
+
+    fun delete(flashcardId: Int) {
+        viewModelScope.launch {
+            repo.delete(flashcardId)
+            // Recarrega a lista após deletar
+            _cards.value = _cards.value.filter { it.id != flashcardId }
+        }
+    }
 }

@@ -47,4 +47,10 @@ class FlashcardRepository(context: Context) {
         db.close()
         list
     }
+
+    suspend fun delete(flashcardId: Int) = withContext(Dispatchers.IO) {
+        val db = dbHelper.writableDatabase
+        db.delete("flashcards", "id = ?", arrayOf(flashcardId.toString()))
+        db.close()
+    }
 }

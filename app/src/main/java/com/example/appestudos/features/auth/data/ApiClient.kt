@@ -21,7 +21,6 @@ object ApiClient {
             json(Json {
                 ignoreUnknownKeys = true
                 isLenient = true
-                explicitNulls = false
             })
         }
         install(Logging) {
