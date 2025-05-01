@@ -66,9 +66,13 @@ fun CreateFlashcardScreen(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar")
                     }
-                }
+                },
+                backgroundColor = MaterialTheme.colors.primary,
+                contentColor = MaterialTheme.colors.onPrimary,
+                elevation = 4.dp
             )
-        }
+        },
+        backgroundColor = MaterialTheme.colors.background
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -114,12 +118,12 @@ fun CreateFlashcardScreen(
                                 Icon(
                                     imageVector = group.icon,
                                     contentDescription = group.title,
-                                    tint = if (selectedGroup == group) MaterialTheme.colors.onPrimary else Color.Gray,
+                                    tint = if (selectedGroup == group) MaterialTheme.colors.onPrimary else MaterialTheme.colors.onSurface,
                                     modifier = Modifier.size(32.dp)
                                 )
                                 Text(
                                     text = group.title,
-                                    color = if (selectedGroup == group) MaterialTheme.colors.onPrimary else Color.Gray,
+                                    color = if (selectedGroup == group) MaterialTheme.colors.onPrimary else MaterialTheme.colors.onSurface,
                                     style = MaterialTheme.typography.caption,
                                     modifier = Modifier.padding(top = 4.dp),
                                     maxLines = 1
@@ -131,8 +135,14 @@ fun CreateFlashcardScreen(
                     OutlinedTextField(
                         value = title,
                         onValueChange = { title = it },
-                        label = { Text("Título do Flashcard") },
-                        modifier = Modifier.fillMaxWidth()
+                        label = { Text("Título do Flashcard", color = MaterialTheme.colors.onSurface) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            textColor = MaterialTheme.colors.onSurface,
+                            cursorColor = MaterialTheme.colors.primary,
+                            focusedBorderColor = MaterialTheme.colors.primary,
+                            unfocusedBorderColor = MaterialTheme.colors.onSurface.copy(alpha = 0.12f)
+                        )
                     )
 
                     // Dropdown de tipos de pergunta
@@ -149,11 +159,13 @@ fun CreateFlashcardScreen(
                             ) {
                                 Text(
                                     text = selectedTipo?.descricao ?: "Selecione o tipo de pergunta",
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
+                                    color = MaterialTheme.colors.onSurface
                                 )
                                 Icon(
                                     imageVector = Icons.Filled.ArrowDropDown,
-                                    contentDescription = "Expandir"
+                                    contentDescription = "Expandir",
+                                    tint = MaterialTheme.colors.onSurface
                                 )
                             }
                         }
@@ -163,7 +175,7 @@ fun CreateFlashcardScreen(
                         ) {
                             if (tiposPergunta.isEmpty()) {
                                 DropdownMenuItem(onClick = { expanded = false }) {
-                                    Text("Nenhum tipo disponível")
+                                    Text("Nenhum tipo disponível", color = MaterialTheme.colors.onSurface)
                                 }
                             } else {
                                 tiposPergunta.forEach { tipo ->
@@ -171,7 +183,7 @@ fun CreateFlashcardScreen(
                                         selectedTipo = tipo
                                         expanded = false
                                     }) {
-                                        Text(tipo.descricao)
+                                        Text(tipo.descricao, color = MaterialTheme.colors.onSurface)
                                     }
                                 }
                             }
@@ -184,7 +196,7 @@ fun CreateFlashcardScreen(
                             checked = isPrivate,
                             onCheckedChange = { isPrivate = it }
                         )
-                        Text("Privado")
+                        Text("Privado", color = MaterialTheme.colors.onSurface)
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
