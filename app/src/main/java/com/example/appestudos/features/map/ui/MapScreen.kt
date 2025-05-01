@@ -45,6 +45,7 @@ import kotlinx.coroutines.*
 import androidx.compose.ui.platform.LocalFocusManager
 import com.example.appestudos.R
 import com.example.appestudos.features.auth.data.UserManager
+import com.example.appestudos.ui.theme.LocalThemeManager
 
 data class FavoriteLocation(
     val id: Int,
@@ -309,7 +310,9 @@ fun MapScreen(navController: NavController) {
         focusManager.clearFocus()
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    val isDark = !MaterialTheme.colors.isLight
+
+    Box(modifier = Modifier.fillMaxSize().background(if (isDark) Color(0xFF121212) else Color.White)) {
         if (isLocationLoaded) {
             GoogleMap(
                 modifier = Modifier
@@ -349,7 +352,7 @@ fun MapScreen(navController: NavController) {
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = if (isDark) Color.White else Color.Red)
             }
         }
 
@@ -366,7 +369,7 @@ fun MapScreen(navController: NavController) {
                     .fillMaxWidth()
                     .height(56.dp),
                 elevation = 4.dp,
-                backgroundColor = Color.White,
+                backgroundColor = if (isDark) Color(0xFF222222) else Color.White,
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Row(
@@ -382,7 +385,7 @@ fun MapScreen(navController: NavController) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Voltar",
-                            tint = Color.Black
+                            tint = if (isDark) Color.White else Color.Black
                         )
                     }
 
@@ -397,14 +400,16 @@ fun MapScreen(navController: NavController) {
                             }
                             isSearching = true
                         },
-                        placeholder = { Text("Cidade ou Bairro", color = Color.Gray) },
+                        placeholder = { Text("Cidade ou Bairro", color = if (isDark) Color.LightGray else Color.Gray) },
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight(),
                         colors = TextFieldDefaults.textFieldColors(
-                            backgroundColor = Color.White,
+                            backgroundColor = if (isDark) Color(0xFF222222) else Color.White,
                             focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
+                            unfocusedIndicatorColor = Color.Transparent,
+                            textColor = if (isDark) Color.White else Color.Black,
+                            cursorColor = if (isDark) Color.White else Color.Black
                         ),
                         trailingIcon = if (searchQuery.isNotEmpty()) {
                             {
@@ -419,7 +424,7 @@ fun MapScreen(navController: NavController) {
                                     Icon(
                                         imageVector = Icons.Default.Clear,
                                         contentDescription = "Limpar",
-                                        tint = Color.Gray
+                                        tint = if (isDark) Color.LightGray else Color.Gray
                                     )
                                 }
                             }
@@ -435,7 +440,7 @@ fun MapScreen(navController: NavController) {
                         .fillMaxWidth()
                         .heightIn(max = 300.dp),
                     elevation = 4.dp,
-                    backgroundColor = Color.White
+                    backgroundColor = if (isDark) Color(0xFF222222) else Color.White
                 ) {
                     LazyColumn {
                         items(searchResults) { prediction ->
@@ -452,65 +457,19 @@ fun MapScreen(navController: NavController) {
                                 ) {
                                     Text(
                                         text = prediction.getPrimaryText(null).toString(),
-                                        style = MaterialTheme.typography.subtitle1
+                                        style = MaterialTheme.typography.subtitle1,
+                                        color = if (isDark) Color.White else Color.Black
                                     )
                                     Text(
                                         text = prediction.getSecondaryText(null).toString(),
                                         style = MaterialTheme.typography.caption,
-                                        color = Color.Gray
-                                    )
-                                }
-
-                                // Botão de adicionar aos favoritos (MANTIDO)
-                                IconButton(
-                                    onClick = {
-                                        scope.launch {
-                                            val placeFields = listOf(Place.Field.LAT_LNG, Place.Field.NAME)
-                                            val request = FetchPlaceRequest.builder(prediction.placeId, placeFields).build()
-
-                                            placesClient?.fetchPlace(request)
-                                                ?.addOnSuccessListener { response ->
-                                                    response.place.latLng?.let { latLng ->
-                                                        UserManager.getCurrentUserId()?.let { userId ->
-                                                            if (database.getFavoriteLocationsCount(userId) < 7) {
-                                                                addFavoriteLocation(
-                                                                    prediction.getPrimaryText(null).toString(),
-                                                                    latLng
-                                                                )
-                                                                Toast.makeText(
-                                                                    context,
-                                                                    "Localização adicionada aos favoritos",
-                                                                    Toast.LENGTH_SHORT
-                                                                ).show()
-                                                            } else {
-                                                                Toast.makeText(
-                                                                    context,
-                                                                    "Limite de 7 localizações favoritas atingido",
-                                                                    Toast.LENGTH_SHORT
-                                                                ).show()
-                                                            }
-                                                        } ?: run {
-                                                            Toast.makeText(
-                                                                context,
-                                                                "Você precisa estar logado para adicionar localizações favoritas",
-                                                                Toast.LENGTH_SHORT
-                                                            ).show()
-                                                        }
-                                                    }
-                                                }
-                                        }
-                                    }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Star,
-                                        contentDescription = "Adicionar aos favoritos",
-                                        tint = Color.Black
+                                        color = if (isDark) Color.LightGray else Color.Gray
                                     )
                                 }
                             }
                             if (searchResults.last() != prediction) {
                                 Divider(
-                                    color = Color.LightGray,
+                                    color = if (isDark) Color.DarkGray else Color.LightGray,
                                     modifier = Modifier.padding(horizontal = 16.dp)
                                 )
                             }
@@ -525,7 +484,7 @@ fun MapScreen(navController: NavController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),
-                    color = Color.Red
+                    color = if (isDark) Color.Red else Color.Red
                 )
             }
         }
@@ -552,12 +511,12 @@ fun MapScreen(navController: NavController) {
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
-            backgroundColor = Color.White
+            backgroundColor = if (isDark) Color.Black else Color.White
         ) {
             Icon(
                 imageVector = Icons.Default.MyLocation,
                 contentDescription = "Centralizar no usuário",
-                tint = if (isFollowingUser) colorResource(id = R.color.blue_p) else Color.Black
+                tint = if (isFollowingUser) Color(0xFF1E90FF) else if (isDark) Color.White else Color.Black
             )
         }
 
@@ -570,12 +529,12 @@ fun MapScreen(navController: NavController) {
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(16.dp),
-            backgroundColor = Color.White
+            backgroundColor = if (isDark) Color.Black else Color.White
         ) {
             Icon(
                 imageVector = Icons.Default.Star,
                 contentDescription = "Localizações favoritas",
-                tint = if (showFavoritesPanel) colorResource(id = R.color.blue_p) else Color.Black
+                tint = if (showFavoritesPanel) Color(0xFF1E90FF) else if (isDark) Color.White else Color.Black
             )
         }
 
@@ -595,7 +554,7 @@ fun MapScreen(navController: NavController) {
                         .heightIn(max = 400.dp)
                         .clickable(enabled = false) { }, // Previne que o clique no card feche o painel
                     elevation = 8.dp,
-                    backgroundColor = Color.White
+                    backgroundColor = if (isDark) Color(0xFF222222) else Color.White
                 ) {
                     Column(
                         modifier = Modifier
@@ -609,13 +568,14 @@ fun MapScreen(navController: NavController) {
                         ) {
                             Text(
                                 text = "Localizações Favoritas",
-                                style = MaterialTheme.typography.h6
+                                style = MaterialTheme.typography.h6,
+                                color = if (isDark) Color.White else Color.Black
                             )
                             IconButton(onClick = { showFavoritesPanel = false }) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "Fechar",
-                                    tint = Color.Gray
+                                    tint = if (isDark) Color.White else Color.Gray
                                 )
                             }
                         }

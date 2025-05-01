@@ -65,12 +65,17 @@ fun AppNavigation() {
         }
 
         composable(
-            route = "flashcardGroup/{groupId}/{groupName}",
-            arguments = listOf(navArgument("groupId") { type = NavType.IntType })
+            route = "flashcardGroup/{groupId}/{groupName}/{isPrivateParam}",
+            arguments = listOf(
+                navArgument("groupId") { type = NavType.IntType },
+                navArgument("groupName") { type = NavType.StringType },
+                navArgument("isPrivateParam") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
             val gid = backStackEntry.arguments?.getInt("groupId")!!
             val gname = backStackEntry.arguments?.getString("groupName")!!
-            FlashcardGroupScreen(navController, gid, gname)
+            val isPrivateParam = backStackEntry.arguments?.getString("isPrivateParam") ?: "public"
+            FlashcardGroupScreen(navController, gid, gname, isPrivateParam)
         }
 
         composable("createFlashcard") {

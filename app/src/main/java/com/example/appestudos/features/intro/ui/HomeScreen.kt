@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.DpOffset
 import com.example.appestudos.features.flashcards.model.FlashcardGroup
 import com.example.appestudos.features.auth.data.UserManager
 import java.net.URLEncoder
+import io.ktor.client.*
+import com.example.appestudos.ui.theme.LocalThemeManager
 
 // Modelo para flashcards privados
 // (se ainda desejar exibir uma lista própria)
@@ -48,18 +50,19 @@ data class Flashcard(
 fun HomeScreen(navController: NavController) {
     val scaffoldState = rememberScaffoldState()
     val navigationBarInsets = WindowInsets.navigationBars.asPaddingValues()
+    val isDark = !MaterialTheme.colors.isLight
 
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
             .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()),
         scaffoldState = scaffoldState,
-        bottomBar = { MyButtonBar(navController) },
+        bottomBar = { MyButtonBar(navController, isDark) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { navController.navigate("createFlashcard") },
                 contentColor = Color.White,
-                backgroundColor = Color(0xFF01380b)
+                backgroundColor = if (isDark) Color.Red else Color(0xFF01380b)
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
@@ -77,13 +80,13 @@ fun HomeScreen(navController: NavController) {
                 .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            NameProfile(navController)
+            NameProfile(navController, isDark)
 
-            // Grid de grupos padrão
+            // Grid de grupos público (fixo)
             LazyVerticalGrid(
                 columns = GridCells.Fixed(4),
                 modifier = Modifier
-                    .height(200.dp)
+                    .heightIn(min = 120.dp, max = 240.dp)
                     .fillMaxWidth(),
                 contentPadding = PaddingValues(4.dp)
             ) {
@@ -92,10 +95,10 @@ fun HomeScreen(navController: NavController) {
                         modifier = Modifier
                             .padding(4.dp)
                             .size(80.dp)
-                            .background(Color(0xFF01380b), shape = RoundedCornerShape(12.dp))
+                            .background(if (isDark) Color.Red else Color(0xFF01380b), shape = RoundedCornerShape(12.dp))
                             .clickable {
                                 val encoded = URLEncoder.encode(group.title, "UTF-8")
-                                navController.navigate("flashcardGroup/${group.id}/$encoded")
+                                navController.navigate("flashcardGroup/${group.id}/$encoded/public")
                             },
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -118,17 +121,45 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
-            // Se desejar manter seção de flashcards privados
-            Privados()
-            val privateFlashcards = listOf(
-                Flashcard(5, "Inglês", Icons.Filled.Code, false),
-                Flashcard(6, "Espanhol", Icons.Filled.DesktopWindows, false)
-            )
-            FlashcardList(
-                flashcards = privateFlashcards,
-                isPublic = false,
-                navController = navController
-            )
+            // Seção de flashcards privados (igual ao público)
+            Privados(isDark)
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                modifier = Modifier
+                    .heightIn(min = 120.dp, max = 240.dp)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(4.dp)
+            ) {
+                items(FlashcardGroup.values()) { group ->
+                    Column(
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .size(80.dp)
+                            .background(if (isDark) Color.Red else Color(0xFF01380b), shape = RoundedCornerShape(12.dp))
+                            .clickable {
+                                val encoded = URLEncoder.encode(group.title, "UTF-8")
+                                navController.navigate("flashcardGroup/${group.id}/$encoded/private")
+                            },
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = group.icon,
+                            contentDescription = group.title,
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Text(
+                            text = group.title,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(top = 4.dp),
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(navigationBarInsets.calculateBottomPadding()))
         }
@@ -136,9 +167,10 @@ fun HomeScreen(navController: NavController) {
 }
 
 @Composable
-fun NameProfile(navController: NavController) {
+fun NameProfile(navController: NavController, isDark: Boolean) {
     var showMenu by remember { mutableStateOf(false) }
     val currentUser = UserManager.getCurrentUser()
+    val themeManager = LocalThemeManager.current
 
     Box(
         modifier = Modifier.fillMaxWidth(),
@@ -153,8 +185,8 @@ fun NameProfile(navController: NavController) {
         ) {
             // Título dos grupos
             Text(
-                text = "Grupos de Flashcards",
-                color = Color.Black,
+                text = "Flashcards Públicos",
+                color = if (isDark) Color.White else Color.Black,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
@@ -167,7 +199,8 @@ fun NameProfile(navController: NavController) {
                     contentDescription = null,
                     modifier = Modifier
                         .size(35.dp)
-                        .clickable { showMenu = true }
+                        .clickable { showMenu = true },
+                    tint = if (isDark) Color.White else Color.Unspecified
                 )
 
                 DropdownMenu(
@@ -176,7 +209,7 @@ fun NameProfile(navController: NavController) {
                     offset = DpOffset(x = 0.dp, y = 8.dp),
                     modifier = Modifier
                         .width(200.dp)
-                        .background(Color.White, RoundedCornerShape(8.dp))
+                        .background(if (isDark) Color(0xFF222222) else Color.White, RoundedCornerShape(8.dp))
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
@@ -185,23 +218,32 @@ fun NameProfile(navController: NavController) {
                             text = "Olá, ${currentUser?.nome ?: "Erro"}",
                             style = MaterialTheme.typography.h6,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 8.dp)
+                            modifier = Modifier.padding(bottom = 8.dp),
+                            color = if (isDark) Color.White else Color.Black
                         )
-                        Divider()
+                        Divider(color = if (isDark) Color.Gray else Color.LightGray)
                         DropdownMenuItem(onClick = { /* TODO: Navigate to profile */ }) {
-                            Text("Perfil")
+                            Text("Perfil", color = if (isDark) Color.White else Color.Black)
                         }
-                        DropdownMenuItem(onClick = { /* TODO: Navigate to settings */ }) {
-                            Text("Configurações")
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Modo Escuro", color = if (isDark) Color.White else Color.Black)
+                            Switch(
+                                checked = themeManager.isDarkMode,
+                                onCheckedChange = { themeManager.toggleDarkMode() }
+                            )
                         }
-                        Divider()
+                        Divider(color = if (isDark) Color.Gray else Color.LightGray)
                         DropdownMenuItem(onClick = {
                             navController.navigate("LoginScreen") {
                                 popUpTo(0) { inclusive = true }
                             }
                             UserManager.clearCurrentUser()
                         }) {
-                            Text("Sair")
+                            Text("Sair", color = if (isDark) Color.White else Color.Black)
                         }
                     }
                 }
@@ -261,10 +303,10 @@ fun FlashcardItem(
 }
 
 @Composable
-fun Privados() {
+fun Privados(isDark: Boolean) {
     Text(
         "Flashcards Privados",
-        color = Color.Black,
+        color = if (isDark) Color.White else Color.Black,
         fontSize = 26.sp,
         fontWeight = FontWeight.Bold,
         modifier = Modifier
@@ -274,7 +316,7 @@ fun Privados() {
 }
 
 @Composable
-fun MyButtonBar(navController: NavController) {
+fun MyButtonBar(navController: NavController, isDark: Boolean) {
     val context = LocalContext.current
     val items = listOf(
         BottomMenuItem("Home", Icons.Filled.Home),
@@ -285,7 +327,7 @@ fun MyButtonBar(navController: NavController) {
 
     BottomAppBar(
         cutoutShape = CircleShape,
-        backgroundColor = Color.White,
+        backgroundColor = if (isDark) Color.Black else Color.White,
         elevation = 3.dp,
         modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
     ) {
@@ -298,7 +340,7 @@ fun MyButtonBar(navController: NavController) {
                     else Toast.makeText(context, item.label, Toast.LENGTH_SHORT).show()
                 },
                 icon = {
-                    Icon(item.icon, contentDescription = item.label, modifier = Modifier.size(30.dp), tint = Color.Black)
+                    Icon(item.icon, contentDescription = item.label, modifier = Modifier.size(30.dp), tint = if (isDark) Color.White else Color.Black)
                 },
                 alwaysShowLabel = true
             )

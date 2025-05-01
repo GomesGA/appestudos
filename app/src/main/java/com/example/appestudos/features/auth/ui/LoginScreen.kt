@@ -62,7 +62,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.appestudos.features.auth.viewmodel.AuthViewModel
 import com.example.appestudos.R
-import com.example.appestudos.ui.theme.MontserratFamily
 
 
 @Composable
@@ -81,6 +80,7 @@ fun LoginScreen(navController: NavController) {
             popUpTo("LoginScreen") { inclusive = true }
         }
     }
+
 
     Column(
         Modifier
@@ -404,6 +404,6 @@ fun LoginScreen(navController: NavController) {
 
 @Preview
 @Composable
-fun LoginPreview() {
+fun LoginScreenPreview() {
     LoginScreen(navController = rememberNavController())
 }

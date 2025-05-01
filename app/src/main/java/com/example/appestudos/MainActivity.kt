@@ -6,11 +6,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.addCallback
 import com.example.appestudos.navigation.AppNavigation
-import com.example.appestudos.ui.theme.AppEstudosTheme
+import com.example.appestudos.ui.theme.AppTheme
+import com.example.appestudos.ui.theme.LocalThemeManager
+import com.example.appestudos.ui.theme.ThemeManager
 import com.google.android.libraries.places.api.Places
 import com.example.appestudos.features.auth.data.UserManager
 
 class MainActivity : ComponentActivity() {
+    private val themeManager = ThemeManager()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -40,8 +44,12 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            AppEstudosTheme {
-                AppNavigation()
+            androidx.compose.runtime.CompositionLocalProvider(
+                LocalThemeManager provides themeManager
+            ) {
+                AppTheme {
+                    AppNavigation()
+                }
             }
         }
     }

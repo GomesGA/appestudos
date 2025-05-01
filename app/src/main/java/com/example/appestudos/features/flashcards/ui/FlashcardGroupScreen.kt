@@ -7,18 +7,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.appestudos.features.flashcards.viewmodel.FlashcardEntity
 import com.example.appestudos.features.flashcards.viewmodel.FlashcardViewModel
-import com.example.appestudos.features.flashcards.model.FlashcardGroup
+import com.example.appestudos.features.flashcards.model.PerguntaResponseApiModel
 import java.net.URLEncoder
 import java.net.URLDecoder
 
@@ -27,11 +24,14 @@ fun FlashcardGroupScreen(
     navController: NavController,
     groupId: Int,
     groupName: String,
+    isPrivateParam: String,
     viewModel: FlashcardViewModel = viewModel()
 ) {
-    // Carrega os flashcards ao entrar na tela
-    LaunchedEffect(groupId) { viewModel.load(groupId) }
-    val cards by viewModel.cards.collectAsState()
+    // Carrega as perguntas ao entrar na tela
+    LaunchedEffect(Unit) { viewModel.carregarPerguntas() }
+    val perguntas by viewModel.perguntas.collectAsState()
+    val isPrivate = isPrivateParam == "private"
+    val filteredPerguntas = perguntas.filter { it.idGrupo == groupId && it.gabaritoBooleano == isPrivate }
 
     Scaffold(
         topBar = {
@@ -56,45 +56,18 @@ fun FlashcardGroupScreen(
                 .padding(paddingValues)
                 .fillMaxSize()
         ) {
-            items(cards) { card ->
-                FlashcardListItem(navController, card, viewModel)
+            items(filteredPerguntas) { pergunta ->
+                PerguntaListItem(navController, pergunta)
             }
         }
     }
 }
 
 @Composable
-fun FlashcardListItem(
+fun PerguntaListItem(
     navController: NavController,
-    card: FlashcardEntity,
-    viewModel: FlashcardViewModel = viewModel()
+    pergunta: PerguntaResponseApiModel
 ) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
-    val icon: ImageVector = FlashcardGroup.valueOf(card.iconName).icon
-
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Confirmar exclusão") },
-            text = { Text("Deseja realmente excluir o flashcard '${card.title}'?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.delete(card.id)
-                        showDeleteDialog = false
-                    }
-                ) {
-                    Text("Excluir")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -107,34 +80,18 @@ fun FlashcardListItem(
             modifier = Modifier
                 .padding(16.dp)
                 .clickable {
-                    val titleEncoded = URLEncoder.encode(card.title, "UTF-8")
-                    val contentEncoded = URLEncoder.encode(card.content, "UTF-8")
+                    val titleEncoded = URLEncoder.encode(pergunta.gabaritoTexto ?: "", "UTF-8")
+                    val contentEncoded = URLEncoder.encode(pergunta.gabaritoTexto ?: "", "UTF-8")
                     navController.navigate("flashcardDetail/$titleEncoded/$contentEncoded")
                 },
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
-            Row(
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-            ) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = card.title,
-                    style = MaterialTheme.typography.h6,
-                    color = MaterialTheme.colors.onSecondary
-                )
-            }
-            
-            IconButton(
-                onClick = { showDeleteDialog = true }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Excluir flashcard",
-                    tint = MaterialTheme.colors.onSecondary
-                )
-            }
+            Text(
+                text = pergunta.gabaritoTexto ?: "",
+                style = MaterialTheme.typography.h6,
+                color = MaterialTheme.colors.onSecondary
+            )
         }
     }
 }
@@ -147,7 +104,6 @@ fun FlashcardDetailScreen(
 ) {
     val decodedTitle = URLDecoder.decode(title, "UTF-8")
     val decodedContent = URLDecoder.decode(content, "UTF-8")
-    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -186,6 +142,7 @@ fun FlashcardGroupScreenPreview() {
     FlashcardGroupScreen(
         navController = rememberNavController(),
         groupId = 1,
-        groupName = "Programação"
+        groupName = "Programação",
+        isPrivateParam = "public"
     )
 }
