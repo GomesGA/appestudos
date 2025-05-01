@@ -18,6 +18,14 @@ import com.example.appestudos.features.flashcards.viewmodel.FlashcardViewModel
 import com.example.appestudos.features.flashcards.model.PerguntaResponseApiModel
 import java.net.URLEncoder
 import java.net.URLDecoder
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBarsPadding
 
 @Composable
 fun FlashcardGroupScreen(
@@ -31,9 +39,16 @@ fun FlashcardGroupScreen(
     LaunchedEffect(Unit) { viewModel.carregarPerguntas() }
     val perguntas by viewModel.perguntas.collectAsState()
     val isPrivate = isPrivateParam == "private"
-    val filteredPerguntas = perguntas.filter { it.idGrupo == groupId && it.gabaritoBooleano == isPrivate }
+    
+    // Filtrando perguntas pelo grupo e status privado/público
+    val filteredPerguntas = perguntas.filter { pergunta -> 
+        pergunta.idGrupo == groupId && pergunta.gabaritoBooleano == isPrivate
+    }
 
     Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .systemBarsPadding(),
         topBar = {
             TopAppBar(
                 title = { Text(groupName) },
@@ -46,7 +61,8 @@ fun FlashcardGroupScreen(
                     }
                 },
                 backgroundColor = MaterialTheme.colors.primary,
-                contentColor = MaterialTheme.colors.onPrimary
+                contentColor = MaterialTheme.colors.onPrimary,
+                modifier = Modifier.statusBarsPadding()
             )
         },
         backgroundColor = MaterialTheme.colors.background
@@ -54,6 +70,7 @@ fun FlashcardGroupScreen(
         LazyColumn(
             modifier = Modifier
                 .padding(paddingValues)
+                .navigationBarsPadding()
                 .fillMaxSize()
         ) {
             items(filteredPerguntas) { pergunta ->
@@ -104,6 +121,7 @@ fun FlashcardDetailScreen(
 ) {
     val decodedTitle = URLDecoder.decode(title, "UTF-8")
     val decodedContent = URLDecoder.decode(content, "UTF-8")
+    
     Scaffold(
         topBar = {
             TopAppBar(

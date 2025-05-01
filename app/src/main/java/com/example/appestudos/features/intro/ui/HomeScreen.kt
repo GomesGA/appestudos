@@ -81,6 +81,7 @@ fun HomeScreen(navController: NavController) {
                 .verticalScroll(rememberScrollState())
         ) {
             NameProfile(navController, isDark)
+            Publicos(isDark)
 
             // Grid de grupos público (fixo)
             LazyVerticalGrid(
@@ -90,7 +91,7 @@ fun HomeScreen(navController: NavController) {
                     .fillMaxWidth(),
                 contentPadding = PaddingValues(4.dp)
             ) {
-                items(FlashcardGroup.values()) { group ->
+                items(FlashcardGroup.entries.toTypedArray()) { group ->
                     Column(
                         modifier = Modifier
                             .padding(4.dp)
@@ -130,7 +131,7 @@ fun HomeScreen(navController: NavController) {
                     .fillMaxWidth(),
                 contentPadding = PaddingValues(4.dp)
             ) {
-                items(FlashcardGroup.values()) { group ->
+                items(FlashcardGroup.entries.toTypedArray()) { group ->
                     Column(
                         modifier = Modifier
                             .padding(4.dp)
@@ -185,7 +186,7 @@ fun NameProfile(navController: NavController, isDark: Boolean) {
         ) {
             // Título dos grupos
             Text(
-                text = "Flashcards Públicos",
+                text = "Studyfy",
                 color = if (isDark) Color.White else Color.Black,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
@@ -306,6 +307,19 @@ fun FlashcardItem(
 fun Privados(isDark: Boolean) {
     Text(
         "Flashcards Privados",
+        color = if (isDark) Color.White else Color.Black,
+        fontSize = 26.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp)
+    )
+}
+
+@Composable
+fun Publicos(isDark: Boolean) {
+    Text(
+        "Flashcards Públicos",
         color = if (isDark) Color.White else Color.Black,
         fontSize = 26.sp,
         fontWeight = FontWeight.Bold,

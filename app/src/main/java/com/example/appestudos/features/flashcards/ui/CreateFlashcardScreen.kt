@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -15,50 +16,56 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.example.appestudos.features.flashcards.model.FlashcardGroup
-import com.example.appestudos.features.flashcards.model.PerguntaApiModel
-import com.example.appestudos.features.flashcards.model.RespostaApiModel
-import com.example.appestudos.features.flashcards.model.TipoPerguntaApiModel
-import com.example.appestudos.features.flashcards.viewmodel.FlashcardViewModel
+import com.example.appestudos.features.flashcards.model.*
 import com.example.appestudos.features.auth.data.UserManager
+import com.example.appestudos.features.flashcards.viewmodel.FlashcardViewModel
 
 @Composable
 fun CreateFlashcardScreen(
     navController: NavController
 ) {
-    // Obtém a instância do ViewModel
     val viewModel: FlashcardViewModel = viewModel()
-
     var selectedGroup by remember { mutableStateOf<FlashcardGroup?>(null) }
-    var title by remember { mutableStateOf("") }
+    var perguntaText by remember { mutableStateOf("") }
     var isPrivate by remember { mutableStateOf(false) }
     var selectedTipo by remember { mutableStateOf<TipoPerguntaApiModel?>(null) }
     var expanded by remember { mutableStateOf(false) }
 
-    // Observa os estados do ViewModel
+    // Estados para diferentes tipos de resposta
+    var alternativas by remember { mutableStateOf(List(4) { AlternativaApiModel(descricao = "", correta = false) }) }
+    var selectedCorrectIndex by remember { mutableStateOf<Int?>(null) }
+    var respostaNumericaText by remember { mutableStateOf("") }
+    var respostaBooleana by remember { mutableStateOf<Boolean?>(null) }
+
+    // Estados do ViewModel
     val tiposPergunta by viewModel.tiposPergunta.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    // Carrega os tipos de pergunta ao abrir a tela
+    // Carrega tipos de pergunta
     LaunchedEffect(Unit) {
         viewModel.carregarTiposPergunta()
     }
 
-    // Mostra erro se houver
-    LaunchedEffect(error) {
-        error?.let {
-            // Aqui você pode mostrar um Snackbar ou Toast com a mensagem de erro
-            println("Erro: $it")
+    // Validações
+    val isFormValid = remember(perguntaText, selectedTipo, selectedGroup) {
+        perguntaText.isNotBlank() && selectedTipo != null && selectedGroup != null &&
+        when (selectedTipo?.id) {
+            1 -> selectedCorrectIndex != null && alternativas.all { it.descricao.isNotBlank() } // Múltipla escolha
+            2 -> respostaNumericaText.isNotBlank() && respostaNumericaText.toDoubleOrNull() != null // Numérica
+            3 -> respostaBooleana != null // Verdadeiro/Falso
+            else -> false
         }
     }
 
     Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .systemBarsPadding(),
         topBar = {
             TopAppBar(
                 title = { Text("Novo Flashcard") },
@@ -69,32 +76,28 @@ fun CreateFlashcardScreen(
                 },
                 backgroundColor = MaterialTheme.colors.primary,
                 contentColor = MaterialTheme.colors.onPrimary,
-                elevation = 4.dp
+                elevation = 4.dp,
+                modifier = Modifier.statusBarsPadding()
             )
-        },
-        backgroundColor = MaterialTheme.colors.background
+        }
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .navigationBarsPadding()
         ) {
             if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
                 Column(
-                    Modifier
+                    modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text(
-                        text = "Selecione o Grupo:",
-                        style = MaterialTheme.typography.subtitle1
-                    )
-
+                    // Seleção de Grupo
+                    Text("Selecione o Grupo:", style = MaterialTheme.typography.subtitle1)
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(4),
                         modifier = Modifier
@@ -103,139 +106,203 @@ fun CreateFlashcardScreen(
                         contentPadding = PaddingValues(4.dp)
                     ) {
                         items(FlashcardGroup.values()) { group ->
-                            Column(
-                                modifier = Modifier
-                                    .padding(4.dp)
-                                    .size(60.dp)
-                                    .background(
-                                        color = if (selectedGroup == group) MaterialTheme.colors.primary else MaterialTheme.colors.surface,
-                                        shape = RoundedCornerShape(8.dp)
-                                    )
-                                    .clickable { selectedGroup = group },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    imageVector = group.icon,
-                                    contentDescription = group.title,
-                                    tint = if (selectedGroup == group) MaterialTheme.colors.onPrimary else MaterialTheme.colors.onSurface,
-                                    modifier = Modifier.size(32.dp)
-                                )
-                                Text(
-                                    text = group.title,
-                                    color = if (selectedGroup == group) MaterialTheme.colors.onPrimary else MaterialTheme.colors.onSurface,
-                                    style = MaterialTheme.typography.caption,
-                                    modifier = Modifier.padding(top = 4.dp),
-                                    maxLines = 1
-                                )
-                            }
+                            GroupItem(
+                                group = group,
+                                isSelected = selectedGroup == group,
+                                onSelect = { selectedGroup = group }
+                            )
                         }
                     }
 
+                    // Campo de Pergunta
                     OutlinedTextField(
-                        value = title,
-                        onValueChange = { title = it },
-                        label = { Text("Título do Flashcard", color = MaterialTheme.colors.onSurface) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                            textColor = MaterialTheme.colors.onSurface,
-                            cursorColor = MaterialTheme.colors.primary,
-                            focusedBorderColor = MaterialTheme.colors.primary,
-                            unfocusedBorderColor = MaterialTheme.colors.onSurface.copy(alpha = 0.12f)
-                        )
+                        value = perguntaText,
+                        onValueChange = { perguntaText = it },
+                        label = { Text("Pergunta") },
+                        modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Dropdown de tipos de pergunta
+                    // Seleção de Tipo
                     Box(modifier = Modifier.fillMaxWidth()) {
                         OutlinedButton(
                             onClick = { expanded = true },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = tiposPergunta.isNotEmpty()
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = selectedTipo?.descricao ?: "Selecione o tipo de pergunta",
-                                    modifier = Modifier.weight(1f),
-                                    color = MaterialTheme.colors.onSurface
-                                )
-                                Icon(
-                                    imageVector = Icons.Filled.ArrowDropDown,
-                                    contentDescription = "Expandir",
-                                    tint = MaterialTheme.colors.onSurface
-                                )
-                            }
+                            Text(selectedTipo?.descricao ?: "Selecione o tipo de pergunta")
+                            Icon(
+                                Icons.Filled.ArrowDropDown,
+                                contentDescription = "Expandir",
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
                         }
                         DropdownMenu(
                             expanded = expanded,
-                            onDismissRequest = { expanded = false }
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.fillMaxWidth(0.9f)
                         ) {
-                            if (tiposPergunta.isEmpty()) {
-                                DropdownMenuItem(onClick = { expanded = false }) {
-                                    Text("Nenhum tipo disponível", color = MaterialTheme.colors.onSurface)
-                                }
-                            } else {
-                                tiposPergunta.forEach { tipo ->
-                                    DropdownMenuItem(onClick = {
-                                        selectedTipo = tipo
-                                        expanded = false
-                                    }) {
-                                        Text(tipo.descricao, color = MaterialTheme.colors.onSurface)
-                                    }
+                            tiposPergunta.forEach { tipo ->
+                                DropdownMenuItem(onClick = {
+                                    selectedTipo = tipo
+                                    expanded = false
+                                }) {
+                                    Text(tipo.descricao)
                                 }
                             }
                         }
                     }
 
-                    // Checkbox para privado
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Campos de resposta baseados no tipo selecionado
+                    when (selectedTipo?.id) {
+                        1 -> { // Múltipla escolha
+                            alternativas.forEachIndexed { index, alternativa ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    RadioButton(
+                                        selected = selectedCorrectIndex == index,
+                                        onClick = { selectedCorrectIndex = index }
+                                    )
+                                    OutlinedTextField(
+                                        value = alternativa.descricao,
+                                        onValueChange = { newValue ->
+                                            alternativas = alternativas.toMutableList().also { list ->
+                                                list[index] = alternativa.copy(descricao = newValue)
+                                            }
+                                        },
+                                        label = { Text("Alternativa ${index + 1}") },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(start = 8.dp)
+                                    )
+                                }
+                            }
+                        }
+                        2 -> { // Numérico
+                            OutlinedTextField(
+                                value = respostaNumericaText,
+                                onValueChange = { if (it.isEmpty() || it.toDoubleOrNull() != null) respostaNumericaText = it },
+                                label = { Text("Resposta Numérica") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        3 -> { // Verdadeiro/Falso
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    RadioButton(
+                                        selected = respostaBooleana == true,
+                                        onClick = { respostaBooleana = true }
+                                    )
+                                    Text("Verdadeiro")
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    RadioButton(
+                                        selected = respostaBooleana == false,
+                                        onClick = { respostaBooleana = false }
+                                    )
+                                    Text("Falso")
+                                }
+                            }
+                        }
+                    }
+
+                    // Checkbox Privado
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    ) {
                         Checkbox(
                             checked = isPrivate,
                             onCheckedChange = { isPrivate = it }
                         )
-                        Text("Privado", color = MaterialTheme.colors.onSurface)
+                        Text("Privado")
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
 
+                    // Botão de Criar
                     Button(
                         onClick = {
                             val idUsuario = UserManager.getCurrentUser()?.id ?: 0
+                            val resposta = RespostaApiModel(
+                                alternativas = if (selectedTipo?.id == 1) {
+                                    alternativas.mapIndexed { index, alt ->
+                                        alt.copy(correta = index == selectedCorrectIndex)
+                                    }
+                                } else null,
+                                numero = if (selectedTipo?.id == 2) respostaNumericaText.toIntOrNull() else null,
+                                booleano = if (selectedTipo?.id == 3) respostaBooleana else null
+                            )
+                            
                             val pergunta = PerguntaApiModel(
                                 idTipo = selectedTipo?.id,
                                 idUsuario = idUsuario,
                                 idGrupo = selectedGroup?.id,
-                                pergunta = title,
+                                pergunta = perguntaText,
                                 privada = isPrivate,
-                                resposta = RespostaApiModel() // Adapte para enviar alternativas, texto, etc
+                                resposta = resposta
                             )
+                            
                             viewModel.criarPergunta(
-                                pergunta,
+                                pergunta = pergunta,
                                 onSuccess = { navController.popBackStack() }
                             )
                         },
-                        enabled = (selectedGroup != null && title.isNotBlank() && selectedTipo != null && !isLoading),
+                        enabled = isFormValid && !isLoading,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = MaterialTheme.colors.primary,
-                            contentColor = MaterialTheme.colors.onPrimary
-                        )
+                            .height(50.dp)
                     ) {
-                        Text("Adicionar", color = MaterialTheme.colors.onPrimary)
+                        Text("Criar Flashcard")
                     }
+                }
+            }
+
+            // Exibição de erro
+            error?.let { errorMessage ->
+                Snackbar(
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                ) {
+                    Text(errorMessage)
                 }
             }
         }
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun CreateFlashcardScreenPreview() {
-    CreateFlashcardScreen(navController = rememberNavController())
+private fun GroupItem(
+    group: FlashcardGroup,
+    isSelected: Boolean,
+    onSelect: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .padding(4.dp)
+            .size(60.dp)
+            .background(
+                color = if (isSelected) MaterialTheme.colors.primary else MaterialTheme.colors.surface,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .clickable(onClick = onSelect),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = group.icon,
+            contentDescription = group.title,
+            tint = if (isSelected) MaterialTheme.colors.onPrimary else MaterialTheme.colors.onSurface,
+            modifier = Modifier.size(32.dp)
+        )
+        Text(
+            text = group.title,
+            color = if (isSelected) MaterialTheme.colors.onPrimary else MaterialTheme.colors.onSurface,
+            style = MaterialTheme.typography.caption,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+    }
 }

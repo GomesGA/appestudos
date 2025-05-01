@@ -32,11 +32,11 @@ data class PerguntaApiModel(
 data class PerguntaResponseApiModel(
     val id: Int,
     val idUsuario: Int,
-    val idGrupo: Int?,
-    val gabaritoTexto: String?,
-    val gabaritoNumero: Int?,
-    val gabaritoBooleano: Boolean?,
-    val alternativas: List<AlternativaApiModel>?
+    val idGrupo: Int? = null,
+    val gabaritoTexto: String? = null,
+    val gabaritoNumero: Int? = null,
+    val gabaritoBooleano: Boolean? = null,
+    val alternativas: List<AlternativaApiModel>? = null
 )
 
 @Serializable
@@ -44,4 +44,4 @@ data class PerguntaListResponseApiModel(
     val success: Boolean,
     val message: String?,
     val data: List<PerguntaResponseApiModel>
-) 
+)
