@@ -46,6 +46,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import com.example.appestudos.R
 import com.example.appestudos.features.auth.data.UserManager
 import com.example.appestudos.ui.theme.LocalThemeManager
+import com.google.android.gms.maps.model.MapStyleOptions
 
 data class FavoriteLocation(
     val id: Int,
@@ -56,6 +57,8 @@ data class FavoriteLocation(
 @Composable
 fun MapScreen(navController: NavController) {
     val context = LocalContext.current
+    val themeManager = LocalThemeManager.current
+    val isDark = themeManager.isDarkMode
     val scope = rememberCoroutineScope()
     var searchQuery by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
@@ -63,10 +66,40 @@ fun MapScreen(navController: NavController) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLocationLoaded by remember { mutableStateOf(false) }
     var permissionRequested by remember { mutableStateOf(false) }
-    
+
+    val darkMapStyleJson = remember {
+        runCatching {
+            context.resources
+                .openRawResource(R.raw.map_style_dark)
+                .bufferedReader()
+                .use { it.readText() }
+        }.getOrNull()
+    }
+
+    // Estado para permissões
+    var hasLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val properties by remember(isDark, darkMapStyleJson) {
+        mutableStateOf(
+            MapProperties(
+                isMyLocationEnabled = hasLocationPermission,
+                mapStyleOptions = if (isDark && darkMapStyleJson != null)
+                    MapStyleOptions(darkMapStyleJson)
+                else null
+            )
+        )
+    }
+
     // Substituir FocusRequester por LocalFocusManager
     val focusManager = LocalFocusManager.current
-    
+
     // Inicializar o banco de dados
     val database = remember { FavoriteLocationDatabase(context) }
 
@@ -90,7 +123,7 @@ fun MapScreen(navController: NavController) {
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(defaultLocation, 15f)
     }
-    
+
     // Carregar localizações favoritas do banco de dados
     LaunchedEffect(Unit) {
         UserManager.getCurrentUserId()?.let { userId ->
@@ -123,16 +156,6 @@ fun MapScreen(navController: NavController) {
 
     // Estado para controlar se o mapa deve seguir a localização do usuário
     var isFollowingUser by remember { mutableStateOf(true) }
-
-    // Estado para permissões
-    var hasLocationPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        )
-    }
 
     // Inicializar o FusedLocationProviderClient
     val fusedLocationClient = remember {
@@ -199,14 +222,6 @@ fun MapScreen(navController: NavController) {
         )
     }
 
-    val properties by remember {
-        mutableStateOf(
-            MapProperties(
-                isMyLocationEnabled = hasLocationPermission
-            )
-        )
-    }
-    
     // Atualizar a posição da câmera quando a localização mudar e estiver seguindo o usuário
     LaunchedEffect(currentLocation) {
         currentLocation?.let { loc ->
@@ -307,10 +322,9 @@ fun MapScreen(navController: NavController) {
         searchQuery = ""
         searchResults = emptyList()
         errorMessage = null
+        isSearching = false
         focusManager.clearFocus()
     }
-
-    val isDark = !MaterialTheme.colors.isLight
 
     Box(modifier = Modifier.fillMaxSize().background(if (isDark) Color(0xFF121212) else Color.White)) {
         if (isLocationLoaded) {
@@ -360,7 +374,8 @@ fun MapScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .statusBarsPadding()
+                .padding(start = 16.dp, end = 16.dp, top = 8.dp)
                 .zIndex(1f)
         ) {
             // Search Bar with back button
@@ -393,12 +408,20 @@ fun MapScreen(navController: NavController) {
                         value = searchQuery,
                         onValueChange = { newValue ->
                             searchQuery = newValue
-                            performSearch(newValue) { predictions, error ->
-                                searchResults = predictions
-                                errorMessage = error
+
+                            if (newValue.isNotBlank()) {
+                                isSearching = true
+                                performSearch(newValue) { predictions, error ->
+                                    searchResults = predictions
+                                    errorMessage = error
+                                    isSearching = false
+                                }
+                            } else {
+                                // Se esvaziou o campo, limpa tudo e desliga o loading
+                                searchResults = emptyList()
+                                errorMessage = null
                                 isSearching = false
                             }
-                            isSearching = true
                         },
                         placeholder = { Text("Cidade ou Bairro", color = if (isDark) Color.LightGray else Color.Gray) },
                         modifier = Modifier
@@ -466,6 +489,52 @@ fun MapScreen(navController: NavController) {
                                         color = if (isDark) Color.LightGray else Color.Gray
                                     )
                                 }
+                                // Botão de adicionar aos favoritos (MANTIDO)
+                                IconButton(
+                                    onClick = {
+                                        scope.launch {
+                                            val placeFields = listOf(Place.Field.LAT_LNG, Place.Field.NAME)
+                                            val request = FetchPlaceRequest.builder(prediction.placeId, placeFields).build()
+
+                                            placesClient?.fetchPlace(request)
+                                                ?.addOnSuccessListener { response ->
+                                                    response.place.latLng?.let { latLng ->
+                                                        UserManager.getCurrentUserId()?.let { userId ->
+                                                            if (database.getFavoriteLocationsCount(userId) < 7) {
+                                                                addFavoriteLocation(
+                                                                    prediction.getPrimaryText(null).toString(),
+                                                                    latLng
+                                                                )
+                                                                Toast.makeText(
+                                                                    context,
+                                                                    "Localização adicionada aos favoritos",
+                                                                    Toast.LENGTH_SHORT
+                                                                ).show()
+                                                            } else {
+                                                                Toast.makeText(
+                                                                    context,
+                                                                    "Limite de 7 localizações favoritas atingido",
+                                                                    Toast.LENGTH_SHORT
+                                                                ).show()
+                                                            }
+                                                        } ?: run {
+                                                            Toast.makeText(
+                                                                context,
+                                                                "Você precisa estar logado para adicionar localizações favoritas",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        }
+                                                    }
+                                                }
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Star,
+                                        contentDescription = "Adicionar aos favoritos",
+                                        tint = if (isDark) Color.White else Color.Black
+                                    )
+                                }
                             }
                             if (searchResults.last() != prediction) {
                                 Divider(
@@ -510,7 +579,7 @@ fun MapScreen(navController: NavController) {
             },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(16.dp),
+                .padding(end = 16.dp, bottom = 80.dp),
             backgroundColor = if (isDark) Color.Black else Color.White
         ) {
             Icon(
@@ -522,13 +591,13 @@ fun MapScreen(navController: NavController) {
 
         // Botão para mostrar localizações favoritas
         FloatingActionButton(
-            onClick = { 
+            onClick = {
                 clearSearch()
-                showFavoritesPanel = !showFavoritesPanel 
+                showFavoritesPanel = !showFavoritesPanel
             },
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(16.dp),
+                .padding(start = 16.dp, bottom = 80.dp),
             backgroundColor = if (isDark) Color.Black else Color.White
         ) {
             Icon(
@@ -549,7 +618,7 @@ fun MapScreen(navController: NavController) {
                 Card(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
-                        .padding(16.dp)
+                        .padding(start = 16.dp, bottom = 80.dp)
                         .width(300.dp)
                         .heightIn(max = 400.dp)
                         .clickable(enabled = false) { }, // Previne que o clique no card feche o painel
@@ -599,7 +668,8 @@ fun MapScreen(navController: NavController) {
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 text = favorite.name,
-                                                style = MaterialTheme.typography.subtitle1
+                                                style = MaterialTheme.typography.subtitle1,
+                                                color = if (isDark) Color.White else Color.Black
                                             )
                                             Text(
                                                 text = "Lat: ${favorite.location.latitude}, Lng: ${favorite.location.longitude}",
