@@ -62,7 +62,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.appestudos.features.auth.viewmodel.AuthViewModel
 import com.example.appestudos.R
-import com.example.appestudos.ui.theme.MontserratFamily
 
 
 @Composable
@@ -82,12 +81,14 @@ fun LoginScreen(navController: NavController) {
         }
     }
 
+
     Column(
         Modifier
             .fillMaxSize()
             .paint(
                 painterResource(id = R.drawable.teste1),
-                contentScale = ContentScale.FillWidth
+                contentScale = ContentScale.Crop,
+                alignment = Alignment.BottomCenter
             ),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -100,7 +101,7 @@ fun LoginScreen(navController: NavController) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(600.dp)
+                    .height(550.dp)
                     .constrainAs(culm) {
                         bottom.linkTo(parent.bottom)
                     }
@@ -108,11 +109,12 @@ fun LoginScreen(navController: NavController) {
                         color = Color(android.graphics.Color.parseColor("#e0e0e0")),
                         shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp)
                     )
-                    .padding(32.dp)
+                    .padding(28.dp)
             ) {
-                Text(text = "Login", fontSize = 20.sp,
+                Text(text = "Login", 
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 16.dp),
+                    modifier = Modifier.padding(top = 8.dp),
                     color = Color.Black
                 )
 
@@ -121,15 +123,6 @@ fun LoginScreen(navController: NavController) {
                     onValueChange = { text = it },
                     label = { Text(text = "Email") },
                     shape = RoundedCornerShape(10.dp),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Next
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onNext = {
-                            passwordFieldFocusRequester.requestFocus()
-                        }
-                    ),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         backgroundColor = Color.White,
                         focusedBorderColor = Color.Transparent,
@@ -145,9 +138,10 @@ fun LoginScreen(navController: NavController) {
                         .background(Color.White, RoundedCornerShape(10.dp))
                 )
 
-                Text(text = "Senha", fontSize = 20.sp,
+                Text(text = "Senha", 
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 16.dp),
+                    modifier = Modifier.padding(top = 12.dp),
                     color = Color.Black
                 )
 
@@ -278,7 +272,8 @@ fun LoginScreen(navController: NavController) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp, bottom = 16.dp), verticalAlignment = Alignment.CenterVertically
+                        .padding(top = 12.dp, bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
@@ -311,7 +306,7 @@ fun LoginScreen(navController: NavController) {
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(55.dp),
+                            .height(48.dp),
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = Color.White
                         ),
@@ -336,7 +331,7 @@ fun LoginScreen(navController: NavController) {
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     Button(
                         onClick = {
@@ -344,7 +339,7 @@ fun LoginScreen(navController: NavController) {
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(55.dp),
+                            .height(48.dp),
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = Color.White
                         ),
@@ -372,28 +367,28 @@ fun LoginScreen(navController: NavController) {
 
                 Button(
                     onClick = {
-                        if (text.isNotBlank() && text2.isNotBlank()) {
+                        if (text.isEmpty() || text2.isEmpty()) {
+                            Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
+                        } else {
                             authViewModel.login(text, text2) { success, msg ->
                                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                 if (success) navigateToHome()
                             }
-                        } else {
-                            Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
                         }
                     },
                     modifier = Modifier
-                        .padding(top = 3.dp, bottom = 3.dp)
+                        .padding(top = 12.dp)
                         .fillMaxWidth()
-                        .height(55.dp),
+                        .height(48.dp),
                     colors = ButtonDefaults.buttonColors(
                         backgroundColor = Color.Black
                     ),
                     shape = RoundedCornerShape(10.dp)
-                ){
+                ) {
                     Text(
                         text = "Entrar",
                         color = Color.White,
-                        fontSize = 22.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -404,6 +399,6 @@ fun LoginScreen(navController: NavController) {
 
 @Preview
 @Composable
-fun LoginPreview() {
+fun LoginScreenPreview() {
     LoginScreen(navController = rememberNavController())
 }
