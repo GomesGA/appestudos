@@ -14,10 +14,6 @@ import com.example.appestudos.ui.theme.ThemeManager
 import com.google.android.libraries.places.api.Places
 import com.example.appestudos.features.auth.data.UserManager
 import com.example.appestudos.features.profile.data.PerformanceManager
-import com.example.appestudos.features.auth.data.ApiService
-import com.example.appestudos.features.auth.data.ApiClient
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val themeManager = ThemeManager()
@@ -31,23 +27,6 @@ class MainActivity : ComponentActivity() {
         
         // Inicializa o PerformanceManager
         PerformanceManager.init(applicationContext)
-
-        // Validação automática do usuário salvo localmente
-        val user = UserManager.getCurrentUser()
-        if (user != null) {
-            val apiService = ApiService(ApiClient.httpClient)
-            MainScope().launch {
-                try {
-                    val response = apiService.validarUsuario(user.id)
-                    if (!response.success) {
-                        UserManager.clearCurrentUser()
-                        // Opcional: você pode mostrar uma mensagem ou forçar a tela de login
-                    }
-                } catch (_: Exception) {
-                    // Em caso de erro de rede, mantenha o usuário local
-                }
-            }
-        }
 
         // Configura o callback do botão de voltar para fechar o app
         onBackPressedDispatcher.addCallback(this) {

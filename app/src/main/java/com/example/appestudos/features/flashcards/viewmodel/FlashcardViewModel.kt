@@ -2,9 +2,7 @@ package com.example.appestudos.features.flashcards.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.appestudos.features.flashcards.model.PerguntaApiModel
-import com.example.appestudos.features.flashcards.model.PerguntaListResponseApiModel
-import com.example.appestudos.features.flashcards.model.TipoPerguntaApiModel
+import com.example.appestudos.features.flashcards.model.*
 import com.example.appestudos.features.flashcards.repo.PerguntaApiRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,8 +11,8 @@ import android.util.Log
 
 class FlashcardViewModel : ViewModel() {
     private val repo = PerguntaApiRepository()
-    private val _perguntas = MutableStateFlow<List<com.example.appestudos.features.flashcards.model.PerguntaResponseApiModel>>(emptyList())
-    val perguntas: StateFlow<List<com.example.appestudos.features.flashcards.model.PerguntaResponseApiModel>> = _perguntas
+    private val _perguntas = MutableStateFlow<List<PerguntaResponseApiModel>>(emptyList())
+    val perguntas: StateFlow<List<PerguntaResponseApiModel>> = _perguntas
 
     private val _tiposPergunta = MutableStateFlow<List<TipoPerguntaApiModel>>(emptyList())
     val tiposPergunta: StateFlow<List<TipoPerguntaApiModel>> = _tiposPergunta
@@ -71,6 +69,47 @@ class FlashcardViewModel : ViewModel() {
                 carregarPerguntas() // Atualiza lista após criar
             } catch (e: Exception) {
                 _error.value = "Erro ao criar pergunta: ${e.message}"
+                onError(e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun criarGrupo(descricao: String, imagemPath: String, usuarioId: Int, onSuccess: () -> Unit = {}, onError: (Throwable) -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _error.value = null
+                val request = GrupoRequestDTO(
+                    descricao = descricao,
+                    imagemPath = imagemPath,
+                    usuarioId = usuarioId
+                )
+                repo.criarGrupo(request)
+                onSuccess()
+            } catch (e: Exception) {
+                _error.value = "Erro ao criar grupo: ${e.message}"
+                onError(e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun deletarGrupo(grupoId: Int, usuarioId: Int, onSuccess: () -> Unit = {}, onError: (Throwable) -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _error.value = null
+                val request = GrupoDeleteRequestDTO(
+                    id = grupoId,
+                    usuarioId = usuarioId
+                )
+                repo.deletarGrupo(request)
+                onSuccess()
+            } catch (e: Exception) {
+                _error.value = "Erro ao deletar grupo: ${e.message}"
                 onError(e)
             } finally {
                 _isLoading.value = false

@@ -4,18 +4,23 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.appestudos.features.flashcards.viewmodel.FlashcardViewModel
 import com.example.appestudos.features.flashcards.model.PerguntaResponseApiModel
+import com.example.appestudos.features.flashcards.model.FlashcardGroup
+import com.example.appestudos.features.auth.data.UserManager
 import java.net.URLEncoder
 import java.net.URLDecoder
 import androidx.compose.foundation.layout.WindowInsets
@@ -27,6 +32,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FlashcardGroupScreen(
     navController: NavController,
@@ -35,6 +41,9 @@ fun FlashcardGroupScreen(
     isPrivateParam: String,
     viewModel: FlashcardViewModel = viewModel()
 ) {
+    var showDeleteConfirmation by remember { mutableStateOf<Int?>(null) }
+    val userId = UserManager.getCurrentUser()?.id ?: 0
+
     // Carrega as perguntas ao entrar na tela
     LaunchedEffect(Unit) { viewModel.carregarPerguntas() }
     val perguntas by viewModel.perguntas.collectAsState()
@@ -60,12 +69,21 @@ fun FlashcardGroupScreen(
                         )
                     }
                 },
-                backgroundColor = MaterialTheme.colors.primary,
-                contentColor = MaterialTheme.colors.onPrimary,
-                modifier = Modifier.statusBarsPadding()
+                actions = {
+                    IconButton(onClick = { showDeleteConfirmation = groupId }) {
+                        Icon(
+                            imageVector = Icons.Filled.Delete,
+                            contentDescription = "Excluir grupo",
+                            tint = Color.Red
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                )
             )
-        },
-        backgroundColor = MaterialTheme.colors.background
+        }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -77,9 +95,45 @@ fun FlashcardGroupScreen(
                 PerguntaListItem(navController, pergunta)
             }
         }
+
+        // Delete confirmation dialog
+        showDeleteConfirmation?.let { groupId ->
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirmation = null },
+                title = { Text("Confirmar exclusão") },
+                text = { Text("Tem certeza que deseja excluir este grupo?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.deletarGrupo(
+                                grupoId = groupId,
+                                usuarioId = userId,
+                                onSuccess = {
+                                    showDeleteConfirmation = null
+                                    navController.popBackStack()
+                                },
+                                onError = {
+                                    showDeleteConfirmation = null
+                                }
+                            )
+                        }
+                    ) {
+                        Text("Excluir")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showDeleteConfirmation = null }
+                    ) {
+                        Text("Cancelar")
+                    }
+                }
+            )
+        }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerguntaListItem(
     navController: NavController,
@@ -89,9 +143,9 @@ fun PerguntaListItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        backgroundColor = MaterialTheme.colors.secondary,
-        contentColor = MaterialTheme.colors.onSecondary,
-        elevation = 6.dp
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
     ) {
         Row(
             modifier = Modifier
@@ -102,17 +156,18 @@ fun PerguntaListItem(
                     navController.navigate("flashcardDetail/$titleEncoded/$contentEncoded")
                 },
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = pergunta.gabaritoTexto ?: "",
-                style = MaterialTheme.typography.h6,
-                color = MaterialTheme.colors.onSecondary
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
             )
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FlashcardDetailScreen(
     navController: NavController,
@@ -134,11 +189,12 @@ fun FlashcardDetailScreen(
                         )
                     }
                 },
-                backgroundColor = MaterialTheme.colors.primaryVariant,
-                contentColor = MaterialTheme.colors.onPrimary
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
-        },
-        backgroundColor = MaterialTheme.colors.background
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -147,14 +203,13 @@ fun FlashcardDetailScreen(
         ) {
             Text(
                 text = decodedContent,
-                style = MaterialTheme.typography.body1,
-                color = MaterialTheme.colors.onBackground
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
     }
 }
 
-@Preview(showBackground = true)
 @Composable
 fun FlashcardGroupScreenPreview() {
     FlashcardGroupScreen(

@@ -87,13 +87,13 @@ fun HomeScreen(navController: NavController) {
         bottomBar = { MyButtonBar(navController, isDark) },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate("createFlashcard") },
+                onClick = { navController.navigate("createGroup") },
                 contentColor = Color.White,
                 backgroundColor = if (isDark) Color(0xFF01380b) else Color(0xFF339158)
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
-                    contentDescription = "Adicionar Flashcard",
+                    contentDescription = "Adicionar Grupo",
                     modifier = Modifier.size(30.dp)
                 )
             }

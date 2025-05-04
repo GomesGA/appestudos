@@ -30,5 +30,4 @@ class ApiService(private val client: HttpClient) {
 
     suspend fun listarGruposPorUsuario(usuarioId: Int): ApiResponse<List<GrupoResponseDTO>> =
         client.get("${ApiClient.BASE_URL}/grupos/usuario/$usuarioId").body()
-
 }

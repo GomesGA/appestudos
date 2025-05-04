@@ -12,7 +12,7 @@ import androidx.navigation.navArgument
 import com.example.appestudos.features.auth.ui.ChangePasswordScreen
 import com.example.appestudos.features.auth.ui.LoginScreen
 import com.example.appestudos.features.auth.ui.RegisterScreen
-import com.example.appestudos.features.flashcards.ui.CreateFlashcardScreen
+import com.example.appestudos.features.flashcards.ui.CreateGroupScreen
 import com.example.appestudos.features.flashcards.ui.FlashcardDetailScreen
 import com.example.appestudos.features.flashcards.ui.FlashcardGroupScreen
 import com.example.appestudos.features.intro.ui.HomeScreen
@@ -58,8 +58,8 @@ fun AppNavigation() {
             PerformanceScreen(navController)
         }
 
-        composable("addFlashcard") {
-            CreateFlashcardScreen(navController)
+        composable("createGroup") {
+            CreateGroupScreen(navController)
         }
 
         composable(
@@ -86,10 +86,6 @@ fun AppNavigation() {
             val gname = backStackEntry.arguments?.getString("groupName")!!
             val isPrivateParam = backStackEntry.arguments?.getString("isPrivateParam") ?: "public"
             FlashcardGroupScreen(navController, gid, gname, isPrivateParam)
-        }
-
-        composable("createFlashcard") {
-            CreateFlashcardScreen(navController)
         }
     }
 } 
