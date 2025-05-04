@@ -373,9 +373,24 @@ fun MyButtonBar(navController: NavController, isDark: Boolean) {
                 onClick = {
                     selected = item.label
                     when (item.label) {
-                        "Home" -> navController.navigate("home")
-                        "Lupa" -> navController.navigate("toast")
-                        "Maps" -> navController.navigate("map")
+                        "Home" -> navController.navigate("home") {
+                            // Pop up to the start destination of the graph to
+                            // avoid building up a large stack of destinations
+                            popUpTo("home") { saveState = true }
+                            // Avoid multiple copies of the same destination
+                            launchSingleTop = true
+                            // Restore state when reselecting a previously selected item
+                            restoreState = true
+                        }
+                        "Lupa" -> {
+                            // For now, show a toast until the screen is implemented
+                            Toast.makeText(context, "Em breve!", Toast.LENGTH_SHORT).show()
+                        }
+                        "Maps" -> navController.navigate("map") {
+                            popUpTo("home") { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 },
                 icon = {
