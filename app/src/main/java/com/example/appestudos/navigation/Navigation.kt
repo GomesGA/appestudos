@@ -13,7 +13,6 @@ import com.example.appestudos.features.auth.ui.ChangePasswordScreen
 import com.example.appestudos.features.auth.ui.LoginScreen
 import com.example.appestudos.features.auth.ui.RegisterScreen
 import com.example.appestudos.features.flashcards.ui.CreateFlashcardScreen
-import com.example.appestudos.features.flashcards.ui.CreateGroupScreen
 import com.example.appestudos.features.flashcards.ui.FlashcardDetailScreen
 import com.example.appestudos.features.flashcards.ui.FlashcardGroupScreen
 import com.example.appestudos.features.intro.ui.HomeScreen

@@ -1,6 +1,6 @@
 package com.example.appestudos.features.intro.ui
 
-import android.widget.Toast
+
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -44,16 +44,6 @@ import androidx.compose.material.icons.outlined.WbIncandescent
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.unit.Dp
-
-// Modelo para flashcards privados
-// (se ainda desejar exibir uma lista própria)
-data class Flashcard(
-    val id: Int,
-    val title: String,
-    val icon: ImageVector,
-    val isPublic: Boolean
-)
 
 @Composable
 fun HomeScreen(navController: NavController) {
