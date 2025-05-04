@@ -44,4 +44,11 @@ class PerguntaApiRepository {
             parameter("idGrupo", idGrupo)
         }.body()
     }
+
+    suspend fun deletarPergunta(request: PerguntaDeleteDTO) {
+        ApiClient.httpClient.delete("${ApiClient.BASE_URL}/pergunta") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
 } 

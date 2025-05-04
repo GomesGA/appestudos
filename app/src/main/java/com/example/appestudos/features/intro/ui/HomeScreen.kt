@@ -89,7 +89,7 @@ fun HomeScreen(navController: NavController) {
             FloatingActionButton(
                 onClick = { navController.navigate("createGroup") },
                 contentColor = Color.White,
-                backgroundColor = if (isDark) Color(0xFF01380b) else Color(0xFF339158)
+                backgroundColor = if (isDark) Color(0xFF27391C) else Color(0xFF255F38)
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
@@ -126,7 +126,7 @@ fun HomeScreen(navController: NavController) {
                             modifier = Modifier
                                 .padding(4.dp)
                                 .size(80.dp)
-                                .background(if (isDark) Color(0xFF01380b) else Color(0xFF339158), shape = RoundedCornerShape(12.dp))
+                                .background(if (isDark) Color(0xFF27391C) else Color(0xFF255F38), shape = RoundedCornerShape(12.dp))
                                 .clickable {
                                     val encoded = java.net.URLEncoder.encode(group.descricao, "UTF-8")
                                     navController.navigate("flashcardGroup/${group.id}/$encoded/public")
@@ -170,7 +170,7 @@ fun HomeScreen(navController: NavController) {
                             modifier = Modifier
                                 .padding(4.dp)
                                 .size(80.dp)
-                                .background(if (isDark) Color(0xFF01380b) else Color(0xFF339158), shape = RoundedCornerShape(12.dp))
+                                .background(if (isDark) Color(0xFF27391C) else Color(0xFF255F38), shape = RoundedCornerShape(12.dp))
                                 .clickable {
                                     val encoded = java.net.URLEncoder.encode(group.descricao, "UTF-8")
                                     navController.navigate("flashcardGroup/${group.id}/$encoded/private")
@@ -365,7 +365,7 @@ fun NameProfile(navController: NavController, isDark: Boolean) {
 @Composable
 fun Privados(isDark: Boolean) {
     Text(
-        "Flashcards Privados",
+        "Grupos Privados",
         color = if (isDark) Color.White else Color.Black,
         fontSize = 26.sp,
         fontWeight = FontWeight.Bold,
@@ -378,7 +378,7 @@ fun Privados(isDark: Boolean) {
 @Composable
 fun Publicos(isDark: Boolean) {
     Text(
-        "Flashcards Públicos",
+        "Grupos Públicos",
         color = if (isDark) Color.White else Color.Black,
         fontSize = 26.sp,
         fontWeight = FontWeight.Bold,

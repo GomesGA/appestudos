@@ -277,4 +277,22 @@ class FlashcardViewModel : ViewModel() {
             }
         }
     }
+
+    fun deletarPergunta(
+        perguntaId: Int,
+        usuarioId: Int,
+        groupId: Int,
+        onSuccess: () -> Unit,
+        onError: () -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                repo.deletarPergunta(PerguntaDeleteDTO(perguntaId, usuarioId))
+                carregarPerguntasPorUsuarioEGrupo(usuarioId, groupId)
+                onSuccess()
+            } catch (e: Exception) {
+                onError()
+            }
+        }
+    }
 }

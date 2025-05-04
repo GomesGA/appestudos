@@ -45,6 +45,7 @@ fun FlashcardGroupScreen(
     viewModel: FlashcardViewModel = viewModel()
 ) {
     var showDeleteConfirmation by remember { mutableStateOf<Int?>(null) }
+    var showDeletePerguntaConfirmation by remember { mutableStateOf<Int?>(null) }
     val userId = UserManager.getCurrentUser()?.id ?: 0
 
     // Carrega as perguntas ao entrar na tela
@@ -120,7 +121,7 @@ fun FlashcardGroupScreen(
                     .fillMaxSize()
             ) {
                 items(perguntasFiltradas) { pergunta ->
-                    PerguntaListItem(navController, pergunta)
+                    PerguntaListItemComDelete(navController, pergunta, isPrivate, onDelete = { showDeletePerguntaConfirmation = it })
                 }
             }
         }
@@ -159,17 +160,49 @@ fun FlashcardGroupScreen(
                 }
             )
         }
+
+        // Dialog de confirmação para deletar flashcard individual
+        showDeletePerguntaConfirmation?.let { perguntaId ->
+            AlertDialog(
+                onDismissRequest = { showDeletePerguntaConfirmation = null },
+                title = { Text("Confirmar exclusão") },
+                text = { Text("Tem certeza que deseja excluir este flashcard?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.deletarPergunta(
+                                perguntaId = perguntaId,
+                                usuarioId = userId,
+                                groupId = groupId,
+                                onSuccess = {
+                                    showDeletePerguntaConfirmation = null
+                                },
+                                onError = {
+                                    showDeletePerguntaConfirmation = null
+                                }
+                            )
+                        }
+                    ) { Text("Excluir") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeletePerguntaConfirmation = null }) {
+                        Text("Cancelar")
+                    }
+                }
+            )
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PerguntaListItem(
+fun PerguntaListItemComDelete(
     navController: NavController,
-    pergunta: PerguntaResponseApiModel
+    pergunta: PerguntaResponseApiModel,
+    isPrivate: Boolean,
+    onDelete: (Int) -> Unit
 ) {
     var mostrarResposta by remember { mutableStateOf(false) }
-    // O título é a pergunta (não gabaritoTexto)
     val titulo = pergunta.descricao ?: "Sem título"
     val resposta = when {
         !pergunta.gabaritoTexto.isNullOrBlank() -> pergunta.gabaritoTexto!!
@@ -203,11 +236,23 @@ fun PerguntaListItem(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            Text(
-                text = titulo,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = titulo,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.weight(1f)
+                )
+                if (isPrivate) {
+                    IconButton(onClick = { onDelete(pergunta.id) }) {
+                        Icon(
+                            imageVector = Icons.Filled.Delete,
+                            contentDescription = "Excluir flashcard",
+                            tint = Color.Red
+                        )
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(4.dp))
             if (isTextoAberto) {
                 // Não exibe resposta, só redireciona ao clicar

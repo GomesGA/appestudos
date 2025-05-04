@@ -46,3 +46,9 @@ data class PerguntaListResponseApiModel(
     val message: String?,
     val data: List<PerguntaResponseApiModel>
 )
+
+@Serializable
+data class PerguntaDeleteDTO(
+    val id: Int,
+    val idUsuario: Int
+)
