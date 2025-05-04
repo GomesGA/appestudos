@@ -51,6 +51,7 @@ fun HomeScreen(navController: NavController) {
     val navigationBarInsets = WindowInsets.navigationBars.asPaddingValues()
     val isDark = !MaterialTheme.colors.isLight
 
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -171,6 +172,7 @@ fun NameProfile(navController: NavController, isDark: Boolean) {
     var showMenu by remember { mutableStateOf(false) }
     val currentUser = UserManager.getCurrentUser()
     val themeManager = LocalThemeManager.current
+    var shouldClearUser by remember { mutableStateOf(false) }
 
     @Composable
     fun DayNightToggleSimple(
@@ -303,13 +305,20 @@ fun NameProfile(navController: NavController, isDark: Boolean) {
                             navController.navigate("LoginScreen") {
                                 popUpTo(0) { inclusive = true }
                             }
-                            UserManager.clearCurrentUser()
+                            shouldClearUser = true
                         }) {
                             Text("Sair", color = if (isDark) Color.White else Color.Black)
                         }
                     }
                 }
             }
+        }
+    }
+
+    if (shouldClearUser) {
+        LaunchedEffect(Unit) {
+            kotlinx.coroutines.delay(500)
+            UserManager.clearCurrentUser()
         }
     }
 }
