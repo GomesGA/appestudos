@@ -44,13 +44,40 @@ import androidx.compose.material.icons.outlined.WbIncandescent
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import com.example.appestudos.features.flashcards.model.GrupoResponseDTO
+import com.example.appestudos.features.flashcards.model.getIconFromPath
+import com.example.appestudos.features.auth.data.ApiClient
+import com.example.appestudos.features.auth.data.ApiService
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(navController: NavController) {
     val scaffoldState = rememberScaffoldState()
     val navigationBarInsets = WindowInsets.navigationBars.asPaddingValues()
     val isDark = !MaterialTheme.colors.isLight
+    val apiService = remember { ApiService(ApiClient.httpClient) }
+    val userId = UserManager.getCurrentUser()?.id
+    var grupos by remember { mutableStateOf<List<GrupoResponseDTO>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
 
+    // Buscar grupos da API
+    LaunchedEffect(userId) {
+        loading = true
+        try {
+            val response = apiService.listarGruposPorUsuario(userId ?: 0)
+            println("API grupos: $response") // Debug print
+            if (response.success && response.data != null) {
+                grupos = response.data
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        loading = false
+    }
+
+    val gruposPublicos = grupos.filter { it.idUsuario == null }
+    val gruposPrivados = grupos.filter { it.idUsuario == userId }
 
     Scaffold(
         modifier = Modifier
@@ -82,86 +109,97 @@ fun HomeScreen(navController: NavController) {
         ) {
             NameProfile(navController, isDark)
             Publicos(isDark)
-
-            // Grid de grupos público (fixo)
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
-                modifier = Modifier
-                    .heightIn(min = 120.dp, max = 240.dp)
-                    .fillMaxWidth(),
-                contentPadding = PaddingValues(4.dp)
-            ) {
-                items(FlashcardGroup.entries.toTypedArray()) { group ->
-                    Column(
-                        modifier = Modifier
-                            .padding(4.dp)
-                            .size(80.dp)
-                            .background(if (isDark) Color(0xFF01380b) else Color(0xFF339158), shape = RoundedCornerShape(12.dp))
-                            .clickable {
-                                val encoded = URLEncoder.encode(group.title, "UTF-8")
-                                navController.navigate("flashcardGroup/${group.id}/$encoded/public")
-                            },
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            imageVector = group.icon,
-                            contentDescription = group.title,
-                            tint = Color.White,
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Text(
-                            text = group.title,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            modifier = Modifier.padding(top = 4.dp),
-                            maxLines = 1
-                        )
+            if (loading) {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(4),
+                    modifier = Modifier
+                        .heightIn(min = 120.dp, max = 240.dp)
+                        .fillMaxWidth(),
+                    contentPadding = PaddingValues(4.dp)
+                ) {
+                    items(gruposPublicos) { group ->
+                        Column(
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .size(80.dp)
+                                .background(if (isDark) Color(0xFF01380b) else Color(0xFF339158), shape = RoundedCornerShape(12.dp))
+                                .clickable {
+                                    val encoded = java.net.URLEncoder.encode(group.descricao, "UTF-8")
+                                    navController.navigate("flashcardGroup/${group.id}/$encoded/public")
+                                },
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = getIconFromPath(group.path),
+                                contentDescription = group.descricao,
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Text(
+                                text = group.descricao,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                modifier = Modifier.padding(top = 4.dp),
+                                maxLines = 1
+                            )
+                        }
                     }
                 }
             }
-
-            // Seção de flashcards privados (igual ao público)
             Privados(isDark)
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
-                modifier = Modifier
-                    .heightIn(min = 120.dp, max = 240.dp)
-                    .fillMaxWidth(),
-                contentPadding = PaddingValues(4.dp)
-            ) {
-                items(FlashcardGroup.entries.toTypedArray()) { group ->
-                    Column(
-                        modifier = Modifier
-                            .padding(4.dp)
-                            .size(80.dp)
-                            .background(if (isDark) Color(0xFF01380b) else Color(0xFF339158), shape = RoundedCornerShape(12.dp))
-                            .clickable {
-                                val encoded = URLEncoder.encode(group.title, "UTF-8")
-                                navController.navigate("flashcardGroup/${group.id}/$encoded/private")
-                            },
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            imageVector = group.icon,
-                            contentDescription = group.title,
-                            tint = Color.White,
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Text(
-                            text = group.title,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            modifier = Modifier.padding(top = 4.dp),
-                            maxLines = 1
-                        )
+            if (loading) {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(4),
+                    modifier = Modifier
+                        .heightIn(min = 120.dp, max = 240.dp)
+                        .fillMaxWidth(),
+                    contentPadding = PaddingValues(4.dp)
+                ) {
+                    items(gruposPrivados) { group ->
+                        Column(
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .size(80.dp)
+                                .background(if (isDark) Color(0xFF01380b) else Color(0xFF339158), shape = RoundedCornerShape(12.dp))
+                                .clickable {
+                                    val encoded = java.net.URLEncoder.encode(group.descricao, "UTF-8")
+                                    navController.navigate("flashcardGroup/${group.id}/$encoded/private")
+                                },
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = getIconFromPath(group.path),
+                                contentDescription = group.descricao,
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Text(
+                                text = group.descricao,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                modifier = Modifier.padding(top = 4.dp),
+                                maxLines = 1
+                            )
+                        }
                     }
                 }
             }
-
+            // Mensagem se nenhum grupo for encontrado
+            if (!loading && gruposPublicos.isEmpty() && gruposPrivados.isEmpty()) {
+                Text("Nenhum grupo encontrado.", color = Color.Red, modifier = Modifier.padding(16.dp))
+            }
             Spacer(modifier = Modifier.height(navigationBarInsets.calculateBottomPadding()))
         }
     }

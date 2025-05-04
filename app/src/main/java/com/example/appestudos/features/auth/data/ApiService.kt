@@ -4,6 +4,7 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import com.example.appestudos.features.flashcards.model.GrupoResponseDTO
 
 class ApiService(private val client: HttpClient) {
     suspend fun registrar(usuario: UsuarioRequestDTO): ApiResponse<UsuarioResponseDTO> =
@@ -26,4 +27,8 @@ class ApiService(private val client: HttpClient) {
             contentType(ContentType.Application.Json)
             setBody(request)
         }.body()
+
+    suspend fun listarGruposPorUsuario(usuarioId: Int): ApiResponse<List<GrupoResponseDTO>> =
+        client.get("${ApiClient.BASE_URL}/grupos/usuario/$usuarioId").body()
+
 }
