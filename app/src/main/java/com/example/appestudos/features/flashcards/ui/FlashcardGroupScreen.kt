@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.ui.draw.alpha
+import com.example.appestudos.ui.theme.LocalThemeManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +45,8 @@ fun FlashcardGroupScreen(
     isPrivateParam: String,
     viewModel: FlashcardViewModel = viewModel()
 ) {
+    val themeManager = LocalThemeManager.current
+    val isDark = themeManager.isDarkMode
     var showDeleteConfirmation by remember { mutableStateOf<Int?>(null) }
     var showDeletePerguntaConfirmation by remember { mutableStateOf<Int?>(null) }
     val userId = UserManager.getCurrentUser()?.id ?: 0
@@ -55,18 +58,26 @@ fun FlashcardGroupScreen(
     
     val perguntasFiltradas = perguntas.filter { it.idGrupo == groupId }
 
+    val backgroundColor = if (isDark) Color(0xFF121212) else Color.White
+    val cardColor = if (isDark) Color(0xFF222222) else Color(0xFFF5F5F5)
+    val textColor = if (isDark) Color.White else Color.Black
+    val fabColor = if (isDark) Color(0xFF27391C) else Color(0xFF255F38)
+    val fabIconColor = Color.White
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .systemBarsPadding(),
+            .systemBarsPadding()
+            .background(backgroundColor),
         topBar = {
             TopAppBar(
-                title = { Text(groupName) },
+                title = { Text(groupName, color = textColor) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Voltar"
+                            contentDescription = "Voltar",
+                            tint = textColor
                         )
                     }
                 },
@@ -82,8 +93,8 @@ fun FlashcardGroupScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                    containerColor = backgroundColor,
+                    titleContentColor = textColor
                 )
             )
         },
@@ -91,14 +102,18 @@ fun FlashcardGroupScreen(
             FloatingActionButton(
                 onClick = {
                     navController.navigate("createFlashcard/$groupId/$isPrivateParam")
-                }
+                },
+                contentColor = Color.White,
+                containerColor = fabColor
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
-                    contentDescription = "Criar Flashcard"
+                    contentDescription = "Criar Flashcard",
+                    modifier = Modifier.size(30.dp)
                 )
             }
-        }
+        },
+        containerColor = backgroundColor
     ) { paddingValues ->
         if (perguntasFiltradas.isEmpty()) {
             Box(
@@ -110,7 +125,7 @@ fun FlashcardGroupScreen(
                 Text(
                     text = "Nenhum flashcard encontrado.",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = textColor
                 )
             }
         } else {
@@ -119,9 +134,10 @@ fun FlashcardGroupScreen(
                     .padding(paddingValues)
                     .navigationBarsPadding()
                     .fillMaxSize()
+                    .background(backgroundColor)
             ) {
                 items(perguntasFiltradas) { pergunta ->
-                    PerguntaListItemComDelete(navController, pergunta, isPrivate, onDelete = { showDeletePerguntaConfirmation = it })
+                    PerguntaListItemComDelete(navController, pergunta, isPrivate, onDelete = { showDeletePerguntaConfirmation = it }, cardColor = cardColor, textColor = textColor)
                 }
             }
         }
@@ -200,7 +216,9 @@ fun PerguntaListItemComDelete(
     navController: NavController,
     pergunta: PerguntaResponseApiModel,
     isPrivate: Boolean,
-    onDelete: (Int) -> Unit
+    onDelete: (Int) -> Unit,
+    cardColor: Color,
+    textColor: Color
 ) {
     var mostrarResposta by remember { mutableStateOf(false) }
     val titulo = pergunta.descricao ?: "Sem título"
@@ -230,7 +248,7 @@ fun PerguntaListItemComDelete(
                 }
             },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
+            containerColor = cardColor
         )
     ) {
         Column(
@@ -240,7 +258,7 @@ fun PerguntaListItemComDelete(
                 Text(
                     text = titulo,
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    color = textColor,
                     modifier = Modifier.weight(1f)
                 )
                 if (isPrivate) {
@@ -260,7 +278,7 @@ fun PerguntaListItemComDelete(
                 Text(
                     text = resposta,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                    color = textColor
                 )
             } else {
                 // Resposta totalmente sensurada
@@ -269,7 +287,7 @@ fun PerguntaListItemComDelete(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(24.dp)
-                            .background(MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f))
+                            .background(textColor.copy(alpha = 0.7f))
                     )
                     Text(
                         text = resposta,
@@ -289,37 +307,46 @@ fun FlashcardDetailScreen(
     title: String,
     content: String
 ) {
+    val themeManager = LocalThemeManager.current
+    val isDark = themeManager.isDarkMode
+    val backgroundColor = if (isDark) Color(0xFF121212) else Color.White
+    val textColor = if (isDark) Color.White else Color.Black
+    val appBarColor = if (isDark) Color(0xFF222222) else Color(0xFF4CAF50)
+    val appBarTextColor = Color.White
     val decodedTitle = URLDecoder.decode(title, "UTF-8")
     val decodedContent = URLDecoder.decode(content, "UTF-8")
     
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(decodedTitle) },
+                title = { Text(decodedTitle, color = appBarTextColor) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Voltar"
+                            contentDescription = "Voltar",
+                            tint = appBarTextColor
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = appBarColor,
+                    titleContentColor = appBarTextColor
                 )
             )
-        }
+        },
+        containerColor = backgroundColor
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .padding(paddingValues)
                 .padding(16.dp)
+                .background(backgroundColor)
         ) {
             Text(
                 text = decodedContent,
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground
+                color = textColor
             )
         }
     }

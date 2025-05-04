@@ -9,7 +9,8 @@ data class QuizDailyAttempt(
     @PrimaryKey
     val date: Long, // Timestamp do início do dia
     val attempts: Int, // Número de tentativas no dia
-    val correctAnswers: Int // Número de respostas corretas
+    val correctAnswers: Int, // Número de respostas corretas
+    val userId: Int // ID do usuário dono da tentativa
 ) {
     companion object {
         fun getTodayTimestamp(): Long {

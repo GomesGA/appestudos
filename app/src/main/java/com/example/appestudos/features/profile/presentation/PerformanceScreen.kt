@@ -35,6 +35,7 @@ import java.time.LocalDate
 fun PerformanceScreen(navController: NavController) {
     val isDark = !MaterialTheme.colors.isLight
     val currentUser = UserManager.getCurrentUser()
+    val userId = currentUser?.id ?: 0
     var selectedMonth by remember { mutableStateOf(YearMonth.now()) }
     val context = LocalContext.current
     val quizDb = remember { QuizDatabase.getInstance(context) }
@@ -50,7 +51,7 @@ fun PerformanceScreen(navController: NavController) {
     var attemptsMap by remember { mutableStateOf<Map<String, QuizDailyAttempt>>(emptyMap()) }
 
     // Carrega dias completados, streak e map do banco ao mudar o mês
-    LaunchedEffect(selectedMonth) {
+    LaunchedEffect(selectedMonth, userId) {
         scope.launch {
             val start = selectedMonth.atDay(1)
             val end = selectedMonth.atEndOfMonth()
@@ -60,8 +61,8 @@ fun PerformanceScreen(navController: NavController) {
             calendar.set(end.year, end.monthValue - 1, end.dayOfMonth, 23, 59, 59)
             val endMillis = calendar.timeInMillis
 
-            // Busca todos os dias do mês
-            val attempts = dailyDao.getRecentAttempts(startMillis)
+            // Busca todos os dias do mês SÓ do usuário logado
+            val attempts = dailyDao.getRecentAttemptsByUser(userId, startMillis)
             attemptsMap = attempts
                 .filter { it.date in startMillis..endMillis }
                 .associateBy {
@@ -80,12 +81,12 @@ fun PerformanceScreen(navController: NavController) {
     }
 
     // Novo: busca detalhes do dia selecionado
-    LaunchedEffect(selectedDay) {
+    LaunchedEffect(selectedDay, userId) {
         selectedDay?.let { date ->
             val cal = Calendar.getInstance()
             cal.set(date.year, date.monthValue - 1, date.dayOfMonth, 0, 0, 0)
             cal.set(Calendar.MILLISECOND, 0)
-            dayDetails = dailyDao.getAttemptByDate(cal.timeInMillis)
+            dayDetails = dailyDao.getAttemptByDateAndUser(userId, cal.timeInMillis)
         }
     }
 

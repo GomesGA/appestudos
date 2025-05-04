@@ -137,20 +137,22 @@ fun QuizScreen(navController: NavController) {
     LaunchedEffect(resultado) {
         resultado?.let {
             val today = QuizDailyAttempt.getTodayTimestamp()
-            val existingAttempt = dailyDao.getAttemptByDate(today)
+            val existingAttempt = dailyDao.getAttemptByDateAndUser(userId, today)
             val newAttempt = existingAttempt?.let { attempt ->
                 attempt.copy(
                     attempts = attempt.attempts + 1,
-                    correctAnswers = attempt.correctAnswers + (if (it.contains("acertou")) 1 else 0)
+                    correctAnswers = attempt.correctAnswers + (if (it.contains("acertou")) 1 else 0),
+                    userId = userId
                 )
             } ?: QuizDailyAttempt(
                 date = today,
                 attempts = 1,
-                correctAnswers = if (it.contains("acertou")) 1 else 0
+                correctAnswers = if (it.contains("acertou")) 1 else 0,
+                userId = userId
             )
             dailyDao.insertAttempt(newAttempt)
             val thirtyDaysAgo = today - (30L * 24 * 60 * 60 * 1000)
-            dailyAttempts = dailyDao.getRecentAttempts(thirtyDaysAgo)
+            dailyAttempts = dailyDao.getRecentAttemptsByUser(userId, thirtyDaysAgo)
             currentStreak = calculateCurrentStreak(dailyAttempts)
         }
     }
@@ -275,7 +277,11 @@ fun QuizScreen(navController: NavController) {
                     }
                 }
 
-                Text("Nenhuma pergunta disponível para o quiz.")
+                Text(
+                    "Nenhuma pergunta disponível para o quiz.",
+                    color = if (isDark) Color.White else Color.Black,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
                 tempoRestante?.let { tempo ->
                     val horas = tempo / (1000 * 60 * 60)
                     val minutos = (tempo / (1000 * 60)) % 60
@@ -331,9 +337,16 @@ fun QuizScreen(navController: NavController) {
                     OutlinedTextField(
                         value = respostaNumerica,
                         onValueChange = { respostaNumerica = it },
-                        label = { Text("Digite sua resposta numérica") },
+                        label = { Text("Digite sua resposta numérica", color = if (isDark) Color(0xFF43FF64) else Color.Gray) },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = resultado == null
+                        enabled = resultado == null,
+                        textStyle = LocalTextStyle.current.copy(color = if (isDark) Color.White else Color.Black),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            textColor = if (isDark) Color.White else Color.Black,
+                            focusedBorderColor = if (isDark) Color(0xFF43FF64) else MaterialTheme.colors.primary,
+                            unfocusedBorderColor = if (isDark) Color(0xFF43FF64) else Color.Gray,
+                            cursorColor = if (isDark) Color(0xFF43FF64) else MaterialTheme.colors.primary
+                        )
                     )
                     Button(
                         onClick = {
@@ -376,7 +389,7 @@ fun QuizScreen(navController: NavController) {
                                             acertou = acertou
                                         )
                                     )
-                }
+                                }
                             },
                             enabled = resultado == null
                         ) { Text("Verdadeiro") }
@@ -402,9 +415,14 @@ fun QuizScreen(navController: NavController) {
                 }
                 // Resultado
                 resultado?.let {
+                    val isAcerto = it.contains("acertou")
                     Text(
                         text = it,
-                        color = if (it.contains("acertou")) Color(0xFF4CAF50) else Color.Red,
+                        color = if (isAcerto) {
+                            if (isDark) Color(0xFF43FF64) else Color(0xFF4CAF50)
+                        } else {
+                            if (isDark) Color(0xFFFF5252) else Color.Red
+                        },
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
                         modifier = Modifier.padding(top = 24.dp)
@@ -431,16 +449,24 @@ fun QuizScreen(navController: NavController) {
                                 respostaVF = null
                             }
                         },
-                        modifier = Modifier.padding(top = 16.dp)
+                        modifier = Modifier.padding(top = 16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = if (isDark) Color(0xFF00C853) else Color(0xFF4CAF50),
+                            contentColor = Color.White
+                        )
                     ) {
                         Text("Próxima Pergunta")
                     }
-                }
-                Button(
-                    onClick = { quizStarted = false },
-                    modifier = Modifier.padding(top = 16.dp)
-                ) {
-                    Text("Sair do Quiz")
+                    Button(
+                        onClick = { quizStarted = false },
+                        modifier = Modifier.padding(top = 16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = if (isDark) Color(0xFF222222) else Color(0xFFF5F5F5),
+                            contentColor = if (isDark) Color.White else Color.Black
+                        )
+                    ) {
+                        Text("Sair do Quiz")
+                    }
                 }
             }
         }
