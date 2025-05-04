@@ -1,5 +1,7 @@
 package com.example.appestudos.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavType
@@ -17,7 +19,9 @@ import com.example.appestudos.features.flashcards.ui.FlashcardGroupScreen
 import com.example.appestudos.features.intro.ui.HomeScreen
 import com.example.appestudos.features.map.ui.MapScreen
 import com.example.appestudos.features.auth.data.UserManager
+import com.example.appestudos.features.profile.presentation.PerformanceScreen
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -47,6 +51,9 @@ fun AppNavigation() {
         composable("map") {
             MapScreen(navController)
         }
+        composable("performance") {
+            PerformanceScreen(navController)
+        }
 
         composable("addFlashcard") {
             CreateFlashcardScreen(navController)
@@ -65,12 +72,17 @@ fun AppNavigation() {
         }
 
         composable(
-            route = "flashcardGroup/{groupId}/{groupName}",
-            arguments = listOf(navArgument("groupId") { type = NavType.IntType })
+            route = "flashcardGroup/{groupId}/{groupName}/{isPrivateParam}",
+            arguments = listOf(
+                navArgument("groupId") { type = NavType.IntType },
+                navArgument("groupName") { type = NavType.StringType },
+                navArgument("isPrivateParam") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
             val gid = backStackEntry.arguments?.getInt("groupId")!!
             val gname = backStackEntry.arguments?.getString("groupName")!!
-            FlashcardGroupScreen(navController, gid, gname)
+            val isPrivateParam = backStackEntry.arguments?.getString("isPrivateParam") ?: "public"
+            FlashcardGroupScreen(navController, gid, gname, isPrivateParam)
         }
 
         composable("createFlashcard") {

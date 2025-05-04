@@ -1,56 +1,83 @@
 package com.example.appestudos.features.flashcards.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.appestudos.features.flashcards.model.PerguntaApiModel
+import com.example.appestudos.features.flashcards.model.PerguntaListResponseApiModel
+import com.example.appestudos.features.flashcards.model.TipoPerguntaApiModel
+import com.example.appestudos.features.flashcards.repo.PerguntaApiRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import com.example.appestudos.features.flashcards.repo.FlashcardRepository
+import android.util.Log
 
-/**
- * Modelo de entidade de flashcard para persistência.
- */
-data class FlashcardEntity(
-    val id: Int = 0,
-    val groupId: Int,
-    val groupTitle: String,
-    val iconName: String,
-    val title: String,
-    val content: String
-)
+class FlashcardViewModel : ViewModel() {
+    private val repo = PerguntaApiRepository()
+    private val _perguntas = MutableStateFlow<List<com.example.appestudos.features.flashcards.model.PerguntaResponseApiModel>>(emptyList())
+    val perguntas: StateFlow<List<com.example.appestudos.features.flashcards.model.PerguntaResponseApiModel>> = _perguntas
 
-/**
- * ViewModel para gerenciar flashcards via SQLite (FlashcardRepository).
- */
-class FlashcardViewModel(app: Application) : AndroidViewModel(app) {
-    private val repo = FlashcardRepository(app)
-    private val _cards = MutableStateFlow<List<FlashcardEntity>>(emptyList())
-    val cards: StateFlow<List<FlashcardEntity>> = _cards
+    private val _tiposPergunta = MutableStateFlow<List<TipoPerguntaApiModel>>(emptyList())
+    val tiposPergunta: StateFlow<List<TipoPerguntaApiModel>> = _tiposPergunta
 
-    /**
-     * Carrega todos os flashcards do grupo.
-     */
-    fun load(groupId: Int) {
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    fun carregarPerguntas() {
         viewModelScope.launch {
-            _cards.value = repo.getByGroup(groupId)  // retorna agora com `content`
+            try {
+                _isLoading.value = true
+                _error.value = null
+                val response = repo.buscarPerguntas()
+                _perguntas.value = response.data
+            } catch (e: Exception) {
+                _error.value = "Erro ao carregar perguntas: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
-    /**
-     * Insere um flashcard no banco.
-     */
-    fun insert(f: FlashcardEntity) {
+    fun carregarTiposPergunta() {
         viewModelScope.launch {
-            repo.add(f)
+            try {
+                _isLoading.value = true
+                _error.value = null
+                Log.d("FlashcardViewModel", "Iniciando carregamento de tipos de pergunta")
+                val response = repo.buscarTiposPergunta()
+                Log.d("FlashcardViewModel", "Resposta da API: $response")
+                _tiposPergunta.value = response.data
+                Log.d("FlashcardViewModel", "Tipos de pergunta carregados: ${response.data}")
+            } catch (e: Exception) {
+                Log.e("FlashcardViewModel", "Erro ao carregar tipos de pergunta", e)
+                _error.value = "Erro ao carregar tipos de pergunta: ${e.message}"
+                // Em caso de erro, carrega uma lista vazia para evitar crash
+                _tiposPergunta.value = emptyList()
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
-    fun delete(flashcardId: Int) {
+    fun criarPergunta(pergunta: PerguntaApiModel, onSuccess: () -> Unit = {}, onError: (Throwable) -> Unit = {}) {
         viewModelScope.launch {
-            repo.delete(flashcardId)
-            // Recarrega a lista após deletar
-            _cards.value = _cards.value.filter { it.id != flashcardId }
+            try {
+                _isLoading.value = true
+                _error.value = null
+                repo.criarPergunta(pergunta)
+                onSuccess()
+                carregarPerguntas() // Atualiza lista após criar
+            } catch (e: Exception) {
+                _error.value = "Erro ao criar pergunta: ${e.message}"
+                onError(e)
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
+
+    fun getPublicas() = perguntas.value.filter { it.gabaritoTexto != null && it.gabaritoTexto != "" && it.gabaritoTexto != "true" && it.gabaritoTexto != "false" }
+    fun getPrivadas() = perguntas.value.filter { it.gabaritoTexto == "true" || it.gabaritoTexto == "false" }
 }
