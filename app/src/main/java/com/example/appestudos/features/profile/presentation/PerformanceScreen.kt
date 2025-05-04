@@ -37,21 +37,23 @@ fun PerformanceScreen(navController: NavController) {
     var selectedMonth by remember { mutableStateOf(YearMonth.now()) }
     val performance = remember { mutableStateOf(PerformanceManager.getPerformance(currentUser?.id ?: 0)) }
     var expanded by remember { mutableStateOf(false) }
-    
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Desempenho") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar")
-                    }
-                },
-                backgroundColor = if (isDark) Color.Black else Color.White,
-                contentColor = if (isDark) Color.White else Color.Black,
-                elevation = 4.dp
-            )
-        },
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    modifier = Modifier
+                        .statusBarsPadding(),         // ← empurra pra baixo da status bar
+                    title = { Text("Desempenho") },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar")
+                        }
+                    },
+                    backgroundColor = if (isDark) Color.Black else Color.White,
+                    contentColor = if (isDark) Color.White else Color.Black,
+                    elevation = 4.dp
+                )
+            },
         backgroundColor = if (isDark) Color.Black else Color.White
     ) { paddingValues ->
         Column(
