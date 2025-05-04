@@ -1,5 +1,6 @@
 package com.example.appestudos.features.flashcards.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -7,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,6 +33,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.ui.draw.alpha
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,14 +48,11 @@ fun FlashcardGroupScreen(
     val userId = UserManager.getCurrentUser()?.id ?: 0
 
     // Carrega as perguntas ao entrar na tela
-    LaunchedEffect(Unit) { viewModel.carregarPerguntas() }
+    LaunchedEffect(Unit) { viewModel.carregarPerguntasPorUsuarioEGrupo(userId, groupId) }
     val perguntas by viewModel.perguntas.collectAsState()
     val isPrivate = isPrivateParam == "private"
     
-    // Filtrando perguntas pelo grupo e status privado/público
-    val filteredPerguntas = perguntas.filter { pergunta -> 
-        pergunta.idGrupo == groupId && pergunta.gabaritoBooleano == isPrivate
-    }
+    val perguntasFiltradas = perguntas.filter { it.idGrupo == groupId }
 
     Scaffold(
         modifier = Modifier
@@ -70,12 +70,14 @@ fun FlashcardGroupScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showDeleteConfirmation = groupId }) {
-                        Icon(
-                            imageVector = Icons.Filled.Delete,
-                            contentDescription = "Excluir grupo",
-                            tint = Color.Red
-                        )
+                    if (isPrivate) {
+                        IconButton(onClick = { showDeleteConfirmation = groupId }) {
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = "Excluir grupo",
+                                tint = Color.Red
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -83,16 +85,43 @@ fun FlashcardGroupScreen(
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    navController.navigate("createFlashcard/$groupId/$isPrivateParam")
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = "Criar Flashcard"
+                )
+            }
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(paddingValues)
-                .navigationBarsPadding()
-                .fillMaxSize()
-        ) {
-            items(filteredPerguntas) { pergunta ->
-                PerguntaListItem(navController, pergunta)
+        if (perguntasFiltradas.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Nenhum flashcard encontrado.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .navigationBarsPadding()
+                    .fillMaxSize()
+            ) {
+                items(perguntasFiltradas) { pergunta ->
+                    PerguntaListItem(navController, pergunta)
+                }
             }
         }
 
@@ -139,30 +168,71 @@ fun PerguntaListItem(
     navController: NavController,
     pergunta: PerguntaResponseApiModel
 ) {
+    var mostrarResposta by remember { mutableStateOf(false) }
+    // O título é a pergunta (não gabaritoTexto)
+    val titulo = pergunta.descricao ?: "Sem título"
+    val resposta = when {
+        !pergunta.gabaritoTexto.isNullOrBlank() -> pergunta.gabaritoTexto!!
+        pergunta.gabaritoNumero != null -> pergunta.gabaritoNumero.toString()
+        pergunta.gabaritoBooleano != null -> if (pergunta.gabaritoBooleano == true) "Verdadeiro" else "Falso"
+        pergunta.alternativas?.isNotEmpty() == true -> {
+            pergunta.alternativas.firstOrNull { it.correta }?.descricao ?: ""
+        }
+        else -> ""
+    }
+    val isTextoAberto = !pergunta.gabaritoTexto.isNullOrBlank() &&
+        pergunta.gabaritoNumero == null && pergunta.gabaritoBooleano == null && (pergunta.alternativas == null || pergunta.alternativas.isEmpty())
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(8.dp)
+            .clickable {
+                if (isTextoAberto) {
+                    val titleEncoded = URLEncoder.encode(titulo, "UTF-8")
+                    val contentEncoded = URLEncoder.encode(resposta, "UTF-8")
+                    navController.navigate("flashcardDetail/$titleEncoded/$contentEncoded")
+                } else {
+                    mostrarResposta = !mostrarResposta
+                }
+            },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
         )
     ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .clickable {
-                    val titleEncoded = URLEncoder.encode(pergunta.gabaritoTexto ?: "", "UTF-8")
-                    val contentEncoded = URLEncoder.encode(pergunta.gabaritoTexto ?: "", "UTF-8")
-                    navController.navigate("flashcardDetail/$titleEncoded/$contentEncoded")
-                },
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(16.dp)
         ) {
             Text(
-                text = pergunta.gabaritoTexto ?: "",
+                text = titulo,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
+            Spacer(modifier = Modifier.height(4.dp))
+            if (isTextoAberto) {
+                // Não exibe resposta, só redireciona ao clicar
+            } else if (mostrarResposta) {
+                Text(
+                    text = resposta,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            } else {
+                // Resposta totalmente sensurada
+                Box {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(24.dp)
+                            .background(MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f))
+                    )
+                    Text(
+                        text = resposta,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Transparent
+                    )
+                }
+            }
         }
     }
 }

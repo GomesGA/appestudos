@@ -37,4 +37,11 @@ class PerguntaApiRepository {
             setBody(request)
         }
     }
+
+    suspend fun buscarPerguntasPorUsuarioEGrupo(idUsuario: Int, idGrupo: Int): PerguntaListResponseApiModel {
+        return ApiClient.httpClient.get("${ApiClient.BASE_URL}/pergunta") {
+            parameter("idUsuario", idUsuario)
+            parameter("idGrupo", idGrupo)
+        }.body()
+    }
 } 
