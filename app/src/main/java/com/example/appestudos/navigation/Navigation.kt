@@ -20,6 +20,7 @@ import com.example.appestudos.features.intro.ui.HomeScreen
 import com.example.appestudos.features.map.ui.MapScreen
 import com.example.appestudos.features.auth.data.UserManager
 import com.example.appestudos.features.profile.presentation.PerformanceScreen
+import com.example.appestudos.features.search.ui.QuizScreen
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -50,6 +51,9 @@ fun AppNavigation() {
         }
         composable("map") {
             MapScreen(navController)
+        }
+        composable("search") {
+            QuizScreen(navController)
         }
         composable("performance") {
             PerformanceScreen(navController)
