@@ -36,10 +36,10 @@ fun AppTheme(
 }
 
 private fun darkColors() = androidx.compose.material.darkColors(
-    primary = Color.Red,
-    primaryVariant = Color(0xFF8B0000),
-    secondary = Color(0xFF03DAC6),
-    secondaryVariant = Color(0xFF018786),
+    primary = Color(0xFF01380b),
+    primaryVariant = Color(0xFF01380b),
+    secondary = Color(0xFF01380b),
+    secondaryVariant = Color(0xFF01380b),
     background = Color(0xFF121212),
     surface = Color(0xFF121212),
     error = Color(0xFFCF6679),
@@ -51,10 +51,10 @@ private fun darkColors() = androidx.compose.material.darkColors(
 )
 
 private fun lightColors() = androidx.compose.material.lightColors(
-    primary = Color(0xFF01380b),
-    primaryVariant = Color(0xFF002506),
-    secondary = Color(0xFF03DAC6),
-    secondaryVariant = Color(0xFF018786),
+    primary = Color(0xFF339158),
+    primaryVariant = Color(0xFF339158),
+    secondary = Color(0xFF339158),
+    secondaryVariant = Color(0xFF339158),
     background = Color.White,
     surface = Color.White,
     error = Color(0xFFB00020),

@@ -62,7 +62,7 @@ fun HomeScreen(navController: NavController) {
             FloatingActionButton(
                 onClick = { navController.navigate("createFlashcard") },
                 contentColor = Color.White,
-                backgroundColor = if (isDark) Color.Red else Color(0xFF01380b)
+                backgroundColor = if (isDark) Color(0xFF01380b) else Color(0xFF339158)
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
@@ -96,7 +96,7 @@ fun HomeScreen(navController: NavController) {
                         modifier = Modifier
                             .padding(4.dp)
                             .size(80.dp)
-                            .background(if (isDark) Color.Red else Color(0xFF01380b), shape = RoundedCornerShape(12.dp))
+                            .background(if (isDark) Color(0xFF01380b) else Color(0xFF339158), shape = RoundedCornerShape(12.dp))
                             .clickable {
                                 val encoded = URLEncoder.encode(group.title, "UTF-8")
                                 navController.navigate("flashcardGroup/${group.id}/$encoded/public")
@@ -136,7 +136,7 @@ fun HomeScreen(navController: NavController) {
                         modifier = Modifier
                             .padding(4.dp)
                             .size(80.dp)
-                            .background(if (isDark) Color.Red else Color(0xFF01380b), shape = RoundedCornerShape(12.dp))
+                            .background(if (isDark) Color(0xFF01380b) else Color(0xFF339158), shape = RoundedCornerShape(12.dp))
                             .clickable {
                                 val encoded = URLEncoder.encode(group.title, "UTF-8")
                                 navController.navigate("flashcardGroup/${group.id}/$encoded/private")
@@ -223,8 +223,10 @@ fun NameProfile(navController: NavController, isDark: Boolean) {
                             color = if (isDark) Color.White else Color.Black
                         )
                         Divider(color = if (isDark) Color.Gray else Color.LightGray)
-                        DropdownMenuItem(onClick = { /* TODO: Navigate to profile */ }) {
-                            Text("Perfil", color = if (isDark) Color.White else Color.Black)
+                        DropdownMenuItem(onClick = {
+                            navController.navigate("performance")
+                        }) {
+                            Text("Pefil", color = if (isDark) Color.White else Color.Black)
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -253,55 +255,6 @@ fun NameProfile(navController: NavController, isDark: Boolean) {
     }
 }
 
-@Composable
-fun FlashcardList(
-    flashcards: List<Flashcard>,
-    isPublic: Boolean,
-    navController: NavController
-) {
-    val context = LocalContext.current
-    Column(modifier = Modifier.fillMaxWidth()) {
-        flashcards.forEach { flashcard ->
-            FlashcardItem(
-                flashcard = flashcard,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp)
-                    .clickable {
-                        if (!isPublic) {
-                            Toast.makeText(context, flashcard.title, Toast.LENGTH_SHORT).show()
-                        }
-                    }
-            )
-        }
-    }
-}
-
-@Composable
-fun FlashcardItem(
-    flashcard: Flashcard,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .background(color = Color.White, shape = RoundedCornerShape(8.dp))
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = flashcard.icon,
-            contentDescription = null,
-            tint = Color.Black,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = flashcard.title,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium
-        )
-    }
-}
 
 @Composable
 fun Privados(isDark: Boolean) {

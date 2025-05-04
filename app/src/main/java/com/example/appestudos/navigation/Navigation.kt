@@ -1,5 +1,7 @@
 package com.example.appestudos.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavType
@@ -17,7 +19,9 @@ import com.example.appestudos.features.flashcards.ui.FlashcardGroupScreen
 import com.example.appestudos.features.intro.ui.HomeScreen
 import com.example.appestudos.features.map.ui.MapScreen
 import com.example.appestudos.features.auth.data.UserManager
+import com.example.appestudos.features.profile.presentation.PerformanceScreen
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -46,6 +50,9 @@ fun AppNavigation() {
         }
         composable("map") {
             MapScreen(navController)
+        }
+        composable("performance") {
+            PerformanceScreen(navController)
         }
 
         composable("addFlashcard") {
