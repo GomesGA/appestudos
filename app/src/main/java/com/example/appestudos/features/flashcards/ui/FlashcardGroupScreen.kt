@@ -42,6 +42,7 @@ fun FlashcardGroupScreen(
     var showDeleteConfirmation by remember { mutableStateOf<Int?>(null) }
     var showDeletePerguntaConfirmation by remember { mutableStateOf<Int?>(null) }
     val userId = UserManager.getCurrentUser()?.id ?: 0
+    val decodedGroupName = URLDecoder.decode(groupName, "UTF-8")
 
     // Carrega as perguntas ao entrar na tela
     LaunchedEffect(Unit) { viewModel.carregarPerguntasPorUsuarioEGrupo(userId, groupId) }
@@ -63,7 +64,7 @@ fun FlashcardGroupScreen(
             .background(backgroundColor),
         topBar = {
             TopAppBar(
-                title = { Text(groupName, color = textColor) },
+                title = { Text(decodedGroupName, color = textColor) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(

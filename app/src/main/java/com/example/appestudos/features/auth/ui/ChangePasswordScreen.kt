@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -32,9 +34,11 @@ import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,7 +48,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.appestudos.R
 import com.example.appestudos.features.auth.viewmodel.AuthViewModel
-import com.example.appestudos.ui.theme.MontserratFamily
+import androidx.compose.ui.focus.focusRequester
 
 @Composable
 fun ChangePasswordScreen(navController: NavController) {
@@ -52,6 +56,17 @@ fun ChangePasswordScreen(navController: NavController) {
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     var passwordVisible1 by rememberSaveable { mutableStateOf(false) }
     val viewModel: AuthViewModel = viewModel()
+    var emailError by rememberSaveable { mutableStateOf(false) }
+
+    // FocusRequesters para navegação entre campos
+    val emailFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+    val novaSenhaFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+    val confirmarSenhaFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+    val focusManager = LocalFocusManager.current
+
+    fun isEmailValid(email: String): Boolean {
+        return email.contains("@") && email.endsWith(".com")
+    }
 
     Column(
         Modifier
@@ -91,9 +106,17 @@ fun ChangePasswordScreen(navController: NavController) {
 
                 TextField(
                     value = email,
-                    onValueChange = { email = it },
+                    onValueChange = {
+                        email = it
+                        emailError = !isEmailValid(it)
+                    },
                     label = { Text(text = "Digite seu email") },
                     shape = RoundedCornerShape(10.dp),
+                    isError = emailError && email.isNotBlank(),
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { novaSenhaFocusRequester.requestFocus() }
+                    ),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         backgroundColor = Color.White,
                         focusedBorderColor = Color.Transparent,
@@ -101,13 +124,23 @@ fun ChangePasswordScreen(navController: NavController) {
                         textColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
                         focusedLabelColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
                         unfocusedLabelColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
-                        cursorColor = Color(android.graphics.Color.parseColor("#5E5E5E"))
+                        cursorColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
+                        errorBorderColor = Color.Red
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                         .background(Color.White, RoundedCornerShape(10.dp))
+                        .focusRequester(emailFocusRequester)
                 )
+                if (emailError && email.isNotBlank()) {
+                    Text(
+                        text = "Email inválido. Deve conter '@' e terminar com '.com'",
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                    )
+                }
 
                 Text(text = "Nova Senha", fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
@@ -121,7 +154,10 @@ fun ChangePasswordScreen(navController: NavController) {
                     onValueChange = { novaSenha = it },
                     label = { Text(text = "Digite sua nova senha") },
                     shape = RoundedCornerShape(10.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { confirmarSenhaFocusRequester.requestFocus() }
+                    ),
                     visualTransformation = if (passwordVisible) {
                         androidx.compose.ui.text.input.VisualTransformation.None
                     } else {
@@ -149,6 +185,7 @@ fun ChangePasswordScreen(navController: NavController) {
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                         .background(Color.White, RoundedCornerShape(10.dp))
+                        .focusRequester(novaSenhaFocusRequester)
                 )
 
                 Text(text = "Confirme a Nova Senha", fontSize = 20.sp,
@@ -163,7 +200,10 @@ fun ChangePasswordScreen(navController: NavController) {
                     onValueChange = { confirmarSenha = it },
                     label = { Text(text = "Confirme sua nova senha") },
                     shape = RoundedCornerShape(10.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = { focusManager.clearFocus() }
+                    ),
                     visualTransformation = if (passwordVisible1) {
                         androidx.compose.ui.text.input.VisualTransformation.None
                     } else {
@@ -191,6 +231,7 @@ fun ChangePasswordScreen(navController: NavController) {
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                         .background(Color.White, RoundedCornerShape(10.dp))
+                        .focusRequester(confirmarSenhaFocusRequester)
                 )
 
                 Row(
@@ -212,6 +253,8 @@ fun ChangePasswordScreen(navController: NavController) {
                     onClick = {
                         if (email.isEmpty() || novaSenha.isEmpty() || confirmarSenha.isEmpty()) {
                             Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
+                        } else if (emailError) {
+                            Toast.makeText(context, "Email inválido. Deve conter '@' e terminar com '.com'", Toast.LENGTH_SHORT).show()
                         } else if (novaSenha != confirmarSenha) {
                             Toast.makeText(context, "As senhas não coincidem", Toast.LENGTH_SHORT).show()
                         } else {

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -32,6 +34,7 @@ import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -46,7 +49,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.appestudos.R
 import com.example.appestudos.features.auth.viewmodel.AuthViewModel
-import com.example.appestudos.ui.theme.MontserratFamily
+import androidx.compose.ui.focus.focusRequester
 
 @Composable
 fun RegisterScreen(navController: NavController) {
@@ -56,6 +59,15 @@ fun RegisterScreen(navController: NavController) {
     var nome by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var senha by rememberSaveable { mutableStateOf("") }
+    var emailError by rememberSaveable { mutableStateOf(false) }
+    val nomeFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+    val emailFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+    val senhaFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+
+    fun isEmailValid(email: String): Boolean {
+        return email.contains("@") && email.endsWith(".com")
+    }
 
     Column(
         Modifier
@@ -96,6 +108,10 @@ fun RegisterScreen(navController: NavController) {
                     onValueChange = { nome = it },
                     label = { Text("Nome:") },
                     shape = RoundedCornerShape(10.dp),
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = androidx.compose.ui.text.input.ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { emailFocusRequester.requestFocus() }
+                    ),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         backgroundColor = Color.White,
                         focusedBorderColor = Color.Transparent,
@@ -105,6 +121,7 @@ fun RegisterScreen(navController: NavController) {
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                         .background(Color.White, RoundedCornerShape(10.dp))
+                        .focusRequester(nomeFocusRequester)
                 )
 
                 // Campo Email
@@ -117,20 +134,37 @@ fun RegisterScreen(navController: NavController) {
                 )
                 TextField(
                     value = email,
-                    onValueChange = { email = it },
+                    onValueChange = {
+                        email = it
+                        emailError = !isEmailValid(it)
+                    },
                     label = { Text("Email:") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = androidx.compose.ui.text.input.ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { senhaFocusRequester.requestFocus() }
+                    ),
                     shape = RoundedCornerShape(10.dp),
+                    isError = emailError && email.isNotBlank(),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         backgroundColor = Color.White,
                         focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent
+                        unfocusedBorderColor = Color.Transparent,
+                        errorBorderColor = Color.Red
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                         .background(Color.White, RoundedCornerShape(10.dp))
+                        .focusRequester(emailFocusRequester)
                 )
+                if (emailError && email.isNotBlank()) {
+                    Text(
+                        text = "Email inválido. Deve conter '@' e terminar com '.com'",
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                    )
+                }
 
                 // Campo Senha
                 Text(
@@ -145,7 +179,10 @@ fun RegisterScreen(navController: NavController) {
                     onValueChange = { senha = it },
                     label = { Text("Senha:") },
                     shape = RoundedCornerShape(10.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = androidx.compose.ui.text.input.ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = { focusManager.clearFocus() }
+                    ),
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -159,12 +196,14 @@ fun RegisterScreen(navController: NavController) {
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         backgroundColor = Color.White,
                         focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent
+                        unfocusedBorderColor = Color.Transparent,
+                        errorBorderColor = Color.Red
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                         .background(Color.White, RoundedCornerShape(10.dp))
+                        .focusRequester(senhaFocusRequester)
                 )
 
                 Row(
@@ -186,6 +225,9 @@ fun RegisterScreen(navController: NavController) {
                         when {
                             nome.isBlank() || email.isBlank() || senha.isBlank() -> {
                                 Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
+                            }
+                            emailError -> {
+                                Toast.makeText(context, "Email inválido. Deve conter '@' e terminar com .com", Toast.LENGTH_SHORT).show()
                             }
                             else -> {
                                 authViewModel.register(

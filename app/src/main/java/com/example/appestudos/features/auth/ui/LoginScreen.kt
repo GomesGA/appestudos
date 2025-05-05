@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Icon
@@ -47,7 +46,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -62,6 +60,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.appestudos.features.auth.viewmodel.AuthViewModel
 import com.example.appestudos.R
+import androidx.compose.foundation.text.KeyboardActions
 
 
 @Composable
@@ -72,6 +71,14 @@ fun LoginScreen(navController: NavController) {
     var text by rememberSaveable { mutableStateOf("") }
     var text2 by rememberSaveable { mutableStateOf("") }
     var passwordFieldFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+    var emailError by rememberSaveable { mutableStateOf(false) }
+    val emailFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+    val senhaFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+
+    fun isEmailValid(email: String): Boolean {
+        return email.contains("@") && email.endsWith(".com")
+    }
 
     // Função para navegar para a tela inicial após login bem-sucedido
     fun navigateToHome() {
@@ -100,7 +107,7 @@ fun LoginScreen(navController: NavController) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(550.dp)
+                    .height(575.dp)
                     .constrainAs(culm) {
                         bottom.linkTo(parent.bottom)
                     }
@@ -119,9 +126,17 @@ fun LoginScreen(navController: NavController) {
 
                 TextField(
                     value = text,
-                    onValueChange = { text = it },
+                    onValueChange = {
+                        text = it
+                        emailError = !isEmailValid(it)
+                    },
                     label = { Text(text = "Email") },
                     shape = RoundedCornerShape(10.dp),
+                    isError = emailError && text.isNotBlank(),
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = androidx.compose.ui.text.input.ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { senhaFocusRequester.requestFocus() }
+                    ),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         backgroundColor = Color.White,
                         focusedBorderColor = Color.Transparent,
@@ -129,13 +144,24 @@ fun LoginScreen(navController: NavController) {
                         textColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
                         focusedLabelColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
                         unfocusedLabelColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
-                        cursorColor = Color(android.graphics.Color.parseColor("#5E5E5E"))
+                        cursorColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
+                        errorBorderColor = Color.Red
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                         .background(Color.White, RoundedCornerShape(10.dp))
+                        .focusRequester(emailFocusRequester)
                 )
+
+                if (emailError && text.isNotBlank()) {
+                    Text(
+                        text = "Email inválido. Deve conter '@' e terminar com '.com'",
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                    )
+                }
 
                 Text(text = "Senha", 
                     fontSize = 20.sp,
@@ -151,18 +177,19 @@ fun LoginScreen(navController: NavController) {
                     shape = RoundedCornerShape(10.dp),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
+                        imeAction = androidx.compose.ui.text.input.ImeAction.Done
                     ),
-                    keyboardActions = KeyboardActions(onDone = {
-                        if (text.isNotBlank() && text2.isNotBlank()) {
-                            authViewModel.login(text, text2) { success, msg ->
-                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                                if (success) navigateToHome()
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            focusManager.clearFocus()
+                            if (text.isNotBlank() && text2.isNotBlank() && !emailError) {
+                                authViewModel.login(text, text2) { success, msg ->
+                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                    if (success) navigateToHome()
+                                }
                             }
-                        } else {
-                            Toast.makeText(context, "Por Favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
                         }
-                    }),
+                    ),
                     visualTransformation = if (passwordVisible) {
                         VisualTransformation.None
                     } else {
@@ -184,13 +211,14 @@ fun LoginScreen(navController: NavController) {
                         textColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
                         focusedLabelColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
                         unfocusedLabelColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
-                        cursorColor = Color(android.graphics.Color.parseColor("#5E5E5E"))
+                        cursorColor = Color(android.graphics.Color.parseColor("#5E5E5E")),
+                        errorBorderColor = Color.Red
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                         .background(Color.White, RoundedCornerShape(10.dp))
-                        .focusRequester(passwordFieldFocusRequester)
+                        .focusRequester(senhaFocusRequester)
                 )
 
                 val annotatedText = buildAnnotatedString {
@@ -368,6 +396,8 @@ fun LoginScreen(navController: NavController) {
                     onClick = {
                         if (text.isEmpty() || text2.isEmpty()) {
                             Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
+                        } else if (emailError) {
+                            Toast.makeText(context, "Email inválido. Deve conter '@' e terminar com '.com'", Toast.LENGTH_SHORT).show()
                         } else {
                             authViewModel.login(text, text2) { success, msg ->
                                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
