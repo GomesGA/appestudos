@@ -74,7 +74,7 @@ fun RegisterScreen(navController: NavController) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(600.dp)
+                    .height(550.dp)
                     .constrainAs(culm) {
                         bottom.linkTo(parent.bottom)
                     }

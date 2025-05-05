@@ -56,6 +56,7 @@ fun ChangePasswordScreen(navController: NavController) {
     Column(
         Modifier
             .fillMaxSize()
+            .padding(top = 50.dp)
             .paint(
                 painterResource(id = R.drawable.changepasswordscreen_background),
                 contentScale = ContentScale.FillWidth
@@ -71,7 +72,7 @@ fun ChangePasswordScreen(navController: NavController) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(600.dp)
+                    .height(530.dp)
                     .constrainAs(culm) {
                         bottom.linkTo(parent.bottom)
                     }
