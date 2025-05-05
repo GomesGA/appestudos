@@ -81,12 +81,11 @@ fun LoginScreen(navController: NavController) {
         }
     }
 
-
     Column(
         Modifier
             .fillMaxSize()
             .paint(
-                painterResource(id = R.drawable.teste1),
+                painterResource(id = R.drawable.background_page),
                 contentScale = ContentScale.Crop,
                 alignment = Alignment.BottomCenter
             ),

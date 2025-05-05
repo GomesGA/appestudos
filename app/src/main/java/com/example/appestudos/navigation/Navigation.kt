@@ -12,7 +12,6 @@ import androidx.navigation.navArgument
 import com.example.appestudos.features.auth.ui.ChangePasswordScreen
 import com.example.appestudos.features.auth.ui.LoginScreen
 import com.example.appestudos.features.auth.ui.RegisterScreen
-import com.example.appestudos.features.flashcards.ui.CreateFlashcardScreen
 import com.example.appestudos.features.flashcards.ui.CreateGroupScreen
 import com.example.appestudos.features.flashcards.ui.FlashcardDetailScreen
 import com.example.appestudos.features.flashcards.ui.FlashcardGroupScreen
@@ -20,6 +19,7 @@ import com.example.appestudos.features.intro.ui.HomeScreen
 import com.example.appestudos.features.map.ui.MapScreen
 import com.example.appestudos.features.auth.data.UserManager
 import com.example.appestudos.features.profile.presentation.PerformanceScreen
+import com.example.appestudos.features.quizz.ui.QuizScreen
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -51,12 +51,15 @@ fun AppNavigation() {
         composable("map") {
             MapScreen(navController)
         }
+        composable("search") {
+            QuizScreen(navController)
+        }
         composable("performance") {
             PerformanceScreen(navController)
         }
 
-        composable("addFlashcard") {
-            CreateFlashcardScreen(navController)
+        composable("createGroup") {
+            CreateGroupScreen(navController)
         }
 
         composable(
@@ -85,8 +88,20 @@ fun AppNavigation() {
             FlashcardGroupScreen(navController, gid, gname, isPrivateParam)
         }
 
-        composable("createFlashcard") {
-            CreateFlashcardScreen(navController)
+        composable(
+            route = "createFlashcard/{groupId}/{isPrivateParam}",
+            arguments = listOf(
+                navArgument("groupId") { type = NavType.IntType },
+                navArgument("isPrivateParam") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val groupId = backStackEntry.arguments?.getInt("groupId") ?: 0
+            val isPrivateParam = backStackEntry.arguments?.getString("isPrivateParam") ?: "public"
+            com.example.appestudos.features.flashcards.ui.CreateFlashcardScreen(
+                navController = navController,
+                groupId = groupId,
+                isPrivate = isPrivateParam == "private"
+            )
         }
     }
 } 

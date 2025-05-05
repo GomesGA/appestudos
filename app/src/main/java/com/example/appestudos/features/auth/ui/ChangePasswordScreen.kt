@@ -24,7 +24,6 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -57,8 +56,9 @@ fun ChangePasswordScreen(navController: NavController) {
     Column(
         Modifier
             .fillMaxSize()
+            .padding(top = 50.dp)
             .paint(
-                painterResource(id = R.drawable.background_page),
+                painterResource(id = R.drawable.changepasswordscreen_background),
                 contentScale = ContentScale.FillWidth
             ),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -67,26 +67,12 @@ fun ChangePasswordScreen(navController: NavController) {
             Modifier
                 .fillMaxSize()
         ) {
-            val (topText, culm) = createRefs()
-
-            Text(
-                text = "Troque a \nSua senha",
-                color = Color.White,
-                modifier = Modifier
-                    .padding(top = 16.dp, start = 32.dp)
-                    .constrainAs(topText) {
-                        linkTo(parent.top, culm.top, bias = 0.6f)
-                        linkTo(parent.start,parent.end, bias = 0f)
-                    },
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = MontserratFamily
-            )
+            val (culm) = createRefs()
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(600.dp)
+                    .height(530.dp)
                     .constrainAs(culm) {
                         bottom.linkTo(parent.bottom)
                     }

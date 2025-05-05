@@ -18,9 +18,6 @@ data class LoginRequestDTO(val email: String, val senha: String)
 data class LoginResponseDTO(val usuario: UsuarioResponseDTO)
 
 @Serializable
-data class TipoPerguntaResponseDTO(val id: Int, val descricao: String)
-
-@Serializable
 data class AlterarSenhaRequestDTO(
     @SerialName("email")
     val email: String,

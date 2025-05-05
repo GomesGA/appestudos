@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
             throw RuntimeException("Google Maps API Key not found or empty!")
         }
 
+
         if (!Places.isInitialized()) {
             Places.initialize(applicationContext, apiKey)
         }

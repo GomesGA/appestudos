@@ -1,8 +1,6 @@
 package com.example.appestudos.features.flashcards.repo
 
-import com.example.appestudos.features.flashcards.model.PerguntaApiModel
-import com.example.appestudos.features.flashcards.model.PerguntaListResponseApiModel
-import com.example.appestudos.features.flashcards.model.TipoPerguntaListResponseApiModel
+import com.example.appestudos.features.flashcards.model.*
 import com.example.appestudos.features.auth.data.ApiClient
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -24,5 +22,33 @@ class PerguntaApiRepository {
     suspend fun buscarTiposPergunta(): TipoPerguntaListResponseApiModel {
         return ApiClient.httpClient.get("${ApiClient.BASE_URL}/pergunta/tipos")
             .body()
+    }
+
+    suspend fun criarGrupo(grupo: GrupoRequestDTO) {
+        ApiClient.httpClient.post("${ApiClient.BASE_URL}/grupos") {
+            contentType(ContentType.Application.Json)
+            setBody(grupo)
+        }
+    }
+
+    suspend fun deletarGrupo(request: GrupoDeleteRequestDTO) {
+        ApiClient.httpClient.delete("${ApiClient.BASE_URL}/grupos") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+    suspend fun buscarPerguntasPorUsuarioEGrupo(idUsuario: Int, idGrupo: Int): PerguntaListResponseApiModel {
+        return ApiClient.httpClient.get("${ApiClient.BASE_URL}/pergunta") {
+            parameter("idUsuario", idUsuario)
+            parameter("idGrupo", idGrupo)
+        }.body()
+    }
+
+    suspend fun deletarPergunta(request: PerguntaDeleteDTO) {
+        ApiClient.httpClient.delete("${ApiClient.BASE_URL}/pergunta") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
     }
 } 

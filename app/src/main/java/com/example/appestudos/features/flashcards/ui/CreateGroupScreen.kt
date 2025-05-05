@@ -8,10 +8,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Computer
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,26 +26,33 @@ import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
+import com.example.appestudos.features.auth.data.UserManager
+import com.example.appestudos.features.flashcards.viewmodel.FlashcardViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 data class IconOption(
     val icon: ImageVector,
-    val id: Int
+    val id: Int,
+    val path: String
 )
 
 @Composable
 fun CreateGroupScreen(navController: NavController) {
     var groupName by remember { mutableStateOf("") }
-    var selectedIcon by remember { mutableStateOf<ImageVector?>(null) }
+    var selectedIcon by remember { mutableStateOf<IconOption?>(null) }
+    val viewModel: FlashcardViewModel = viewModel()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     val iconOptions = listOf(
-        IconOption(Icons.Filled.Code, 1),
-        IconOption(Icons.Filled.Calculate, 2),
-        IconOption(Icons.Filled.Science, 3),
-        IconOption(Icons.Filled.Book, 4),
-        IconOption(Icons.Filled.Public, 5),
-        IconOption(Icons.Filled.Language, 6),
-        IconOption(Icons.Filled.Computer, 7),
-        IconOption(Icons.Filled.Business, 8)
+        IconOption(Icons.Filled.Code, 1, "androidx.compose.material.icons.filled.Code"),
+        IconOption(Icons.Filled.Calculate, 2, "androidx.compose.material.icons.filled.Calculate"),
+        IconOption(Icons.Filled.Science, 3, "androidx.compose.material.icons.filled.Science"),
+        IconOption(Icons.Filled.Book, 4, "androidx.compose.material.icons.filled.Book"),
+        IconOption(Icons.Filled.Public, 5, "androidx.compose.material.icons.filled.Public"),
+        IconOption(Icons.Filled.Language, 6, "androidx.compose.material.icons.filled.Language"),
+        IconOption(Icons.Filled.Computer, 7, "androidx.compose.material.icons.filled.Computer"),
+        IconOption(Icons.Filled.Business, 8, "androidx.compose.material.icons.filled.Business")
     )
 
     Scaffold(
@@ -110,8 +114,8 @@ fun CreateGroupScreen(navController: NavController) {
                     items(iconOptions) { iconOption ->
                         IconSelectionItem(
                             icon = iconOption.icon,
-                            isSelected = selectedIcon == iconOption.icon,
-                            onClick = { selectedIcon = iconOption.icon }
+                            isSelected = selectedIcon == iconOption,
+                            onClick = { selectedIcon = iconOption }
                         )
                     }
                 }
@@ -121,16 +125,37 @@ fun CreateGroupScreen(navController: NavController) {
                 // Botão de Criar
                 Button(
                     onClick = {
-                        // TODO: Implementar criação do grupo
-                        navController.popBackStack()
+                        val userId = UserManager.getCurrentUser()?.id ?: 0
+                        viewModel.criarGrupo(
+                            descricao = groupName,
+                            imagemPath = selectedIcon?.path ?: "",
+                            usuarioId = userId,
+                            onSuccess = { navController.popBackStack() }
+                        )
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(60.dp)
                         .padding(bottom = 16.dp),
-                    enabled = groupName.isNotBlank() && selectedIcon != null
+                    enabled = groupName.isNotBlank() && selectedIcon != null && !isLoading
                 ) {
-                    Text("Criar Grupo")
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White
+                        )
+                    } else {
+                        Text("Criar Grupo")
+                    }
+                }
+            }
+
+            // Exibição de erro
+            error?.let { errorMessage ->
+                Snackbar(
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                ) {
+                    Text(errorMessage)
                 }
             }
         }
