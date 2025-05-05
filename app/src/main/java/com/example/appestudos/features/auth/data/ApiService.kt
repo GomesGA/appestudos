@@ -19,9 +19,6 @@ class ApiService(private val client: HttpClient) {
             setBody(request)
         }.body()
 
-    suspend fun listarTiposPergunta(): ApiResponse<List<TipoPerguntaResponseDTO>> =
-        client.get("${ApiClient.BASE_URL}/pergunta/tipos").body()
-
     suspend fun alterarSenha(request: AlterarSenhaRequestDTO): ApiResponse<AlterarSenhaResponseDTO> =
         client.put("${ApiClient.BASE_URL}/usuarios/atualizar-senha") {
             contentType(ContentType.Application.Json)

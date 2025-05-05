@@ -61,7 +61,7 @@ fun RegisterScreen(navController: NavController) {
         Modifier
             .fillMaxSize()
             .paint(
-                painterResource(id = R.drawable.background_page),
+                painterResource(id = R.drawable.registerscreen_background),
                 contentScale = ContentScale.FillWidth
             ),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -69,21 +69,7 @@ fun RegisterScreen(navController: NavController) {
         ConstraintLayout(
             Modifier.fillMaxSize()
         ) {
-            val (topText, culm) = createRefs()
-
-            Text(
-                text = "Criar sua Conta",
-                color = Color.White,
-                modifier = Modifier
-                    .padding(top = 16.dp, start = 32.dp)
-                    .constrainAs(topText) {
-                        linkTo(parent.top, culm.top, bias = 0.6f)
-                        linkTo(parent.start, parent.end, bias = 0f)
-                    },
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = MontserratFamily
-            )
+            val (culm) = createRefs()
 
             Column(
                 modifier = Modifier

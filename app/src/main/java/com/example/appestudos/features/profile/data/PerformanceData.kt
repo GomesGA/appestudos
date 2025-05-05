@@ -52,21 +52,6 @@ object PerformanceManager {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun markDayAsCompleted(userId: Int) {
-        val currentDate = LocalDate.now().format(formatter)
-        val performance = getPerformance(userId)
-        val updatedDays = performance.completedDays + currentDate
-        val updatedStreak = calculateStreak(updatedDays)
-        
-        val updatedPerformance = performance.copy(
-            completedDays = updatedDays,
-            currentStreak = updatedStreak
-        )
-        
-        savePerformance(updatedPerformance)
-    }
-
     fun getPerformance(userId: Int): UserPerformance {
         val json = prefs.getString("performance_$userId", null)
         return if (json != null) {
@@ -81,25 +66,4 @@ object PerformanceManager {
         prefs.edit().putString("performance_${performance.userId}", json).apply()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun calculateStreak(days: Set<String>): Int {
-        if (days.isEmpty()) return 0
-        
-        val sortedDates = days.map { LocalDate.parse(it, formatter) }
-            .sortedDescending()
-        
-        var streak = 0
-        var currentDate = LocalDate.now()
-        
-        for (date in sortedDates) {
-            if (date == currentDate || date == currentDate.minusDays(1)) {
-                streak++
-                currentDate = date
-            } else {
-                break
-            }
-        }
-        
-        return streak
-    }
 } 

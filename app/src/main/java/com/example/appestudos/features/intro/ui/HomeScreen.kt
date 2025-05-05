@@ -1,6 +1,5 @@
 package com.example.appestudos.features.intro.ui
 
-
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,7 +19,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,9 +34,7 @@ import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
-import com.example.appestudos.features.flashcards.model.FlashcardGroup
 import com.example.appestudos.features.auth.data.UserManager
-import java.net.URLEncoder
 import com.example.appestudos.ui.theme.LocalThemeManager
 import androidx.compose.material.icons.outlined.WbIncandescent
 import androidx.compose.material.icons.outlined.WbSunny
@@ -48,7 +44,6 @@ import com.example.appestudos.features.flashcards.model.GrupoResponseDTO
 import com.example.appestudos.features.flashcards.model.getIconFromPath
 import com.example.appestudos.features.auth.data.ApiClient
 import com.example.appestudos.features.auth.data.ApiService
-import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(navController: NavController) {
@@ -59,7 +54,6 @@ fun HomeScreen(navController: NavController) {
     val userId = UserManager.getCurrentUser()?.id
     var grupos by remember { mutableStateOf<List<GrupoResponseDTO>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
-    val scope = rememberCoroutineScope()
 
     // Buscar grupos da API
     LaunchedEffect(userId) {
@@ -390,7 +384,6 @@ fun Publicos(isDark: Boolean) {
 
 @Composable
 fun MyButtonBar(navController: NavController, isDark: Boolean) {
-    val context = LocalContext.current
     val items = listOf(
         BottomMenuItem("Home", Icons.Outlined.Home),
         BottomMenuItem("Lupa", Icons.Outlined.WbIncandescent),

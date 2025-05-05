@@ -1,7 +1,7 @@
 package com.example.appestudos.features.flashcards.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -86,12 +86,14 @@ fun CreateFlashcardScreen(
                     onValueChange = { pergunta = it },
                     label = { Text("Pergunta", color = textColor) },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                    colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = buttonColor,
                         unfocusedBorderColor = cardColor,
                         cursorColor = buttonColor,
                         focusedLabelColor = textColor,
-                        unfocusedLabelColor = textColor
+                        unfocusedLabelColor = textColor,
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor
                     )
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -136,12 +138,14 @@ fun CreateFlashcardScreen(
                                 },
                                 label = { Text("Alternativa ${index + 1}", color = textColor) },
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = TextFieldDefaults.outlinedTextFieldColors(
+                                colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = buttonColor,
                                     unfocusedBorderColor = cardColor,
                                     cursorColor = buttonColor,
                                     focusedLabelColor = textColor,
-                                    unfocusedLabelColor = textColor
+                                    unfocusedLabelColor = textColor,
+                                    focusedTextColor = textColor,
+                                    unfocusedTextColor = textColor
                                 )
                             )
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -169,12 +173,14 @@ fun CreateFlashcardScreen(
                             onValueChange = { respostaNumerica = it },
                             label = { Text("Resposta Numérica", color = textColor) },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = TextFieldDefaults.outlinedTextFieldColors(
+                            colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = buttonColor,
                                 unfocusedBorderColor = cardColor,
                                 cursorColor = buttonColor,
                                 focusedLabelColor = textColor,
-                                unfocusedLabelColor = textColor
+                                unfocusedLabelColor = textColor,
+                                focusedTextColor = textColor,
+                                unfocusedTextColor = textColor
                             )
                         )
                     }
@@ -216,12 +222,14 @@ fun CreateFlashcardScreen(
                             label = { Text("Texto", color = textColor) },
                             modifier = Modifier.fillMaxWidth(),
                             minLines = 5,
-                            colors = TextFieldDefaults.outlinedTextFieldColors(
+                            colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = buttonColor,
                                 unfocusedBorderColor = cardColor,
                                 cursorColor = buttonColor,
                                 focusedLabelColor = textColor,
-                                unfocusedLabelColor = textColor
+                                unfocusedLabelColor = textColor,
+                                focusedTextColor = textColor,
+                                unfocusedTextColor = textColor
                             )
                         )
                     }
@@ -278,23 +286,21 @@ fun CreateFlashcardScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp)
-                        .then(
-                            if (isDark) Modifier.border(
-                                width = 2.dp,
-                                color = Color.White.copy(alpha = 0.2f),
-                                shape = MaterialTheme.shapes.medium
-                            ) else Modifier
-                        ),
+                        .height(56.dp),
                     enabled = pergunta.isNotBlank() && selectedType != null,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isDark) Color(0xFF00C853) else buttonColor
+                        containerColor = if (isDark) Color(0xFF00C853) else buttonColor,
                     ),
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 8.dp,
                         pressedElevation = 12.dp
-                    )
-                ) {
+                    ),
+                    shape = MaterialTheme.shapes.medium,
+                    border = if (isDark) BorderStroke(
+                        width = 2.dp,
+                        color = Color(0xFF00C853).copy(alpha = 0.2f)
+                    ) else null
+                ){
                     Text(
                         "Criar Flashcard",
                         color = Color.White,

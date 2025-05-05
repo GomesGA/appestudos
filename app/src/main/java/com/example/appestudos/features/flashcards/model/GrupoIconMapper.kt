@@ -14,7 +14,6 @@ fun getIconFromPath(path: String): ImageVector {
         "androidx.compose.material.icons.filled.Language" -> Icons.Filled.Language
         "androidx.compose.material.icons.filled.Computer" -> Icons.Filled.Computer
         "androidx.compose.material.icons.filled.Business" -> Icons.Filled.Business
-        // Adicione outros ícones conforme necessário
         else -> Icons.Filled.Public // fallback
     }
 } 

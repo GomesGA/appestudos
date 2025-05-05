@@ -7,5 +7,5 @@ data class GrupoResponseDTO(
     val id: Int,
     val descricao: String,
     val path: String,
-    val idUsuario: Int? // Pode ser null para público
+    val idUsuario: Int?
 ) 

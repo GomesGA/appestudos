@@ -3,7 +3,6 @@ package com.example.appestudos.features.profile.presentation
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
@@ -20,12 +19,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.appestudos.features.auth.data.UserManager
-import com.example.appestudos.features.search.data.QuizDatabase
-import com.example.appestudos.features.search.data.QuizDailyAttempt
+import com.example.appestudos.features.quizz.data.QuizDatabase
+import com.example.appestudos.features.quizz.data.QuizDailyAttempt
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.*
 import java.time.LocalDate

@@ -59,23 +59,6 @@ class FlashcardViewModel : ViewModel() {
         }
     }
 
-    fun criarPergunta(pergunta: PerguntaApiModel, onSuccess: () -> Unit = {}, onError: (Throwable) -> Unit = {}) {
-        viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                _error.value = null
-                repo.criarPergunta(pergunta)
-                onSuccess()
-                carregarPerguntas() // Atualiza lista após criar
-            } catch (e: Exception) {
-                _error.value = "Erro ao criar pergunta: ${e.message}"
-                onError(e)
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
     fun criarGrupo(descricao: String, imagemPath: String, usuarioId: Int, onSuccess: () -> Unit = {}, onError: (Throwable) -> Unit = {}) {
         viewModelScope.launch {
             try {
@@ -116,9 +99,6 @@ class FlashcardViewModel : ViewModel() {
             }
         }
     }
-
-    fun getPublicas() = perguntas.value.filter { it.gabaritoTexto != null && it.gabaritoTexto != "" && it.gabaritoTexto != "true" && it.gabaritoTexto != "false" }
-    fun getPrivadas() = perguntas.value.filter { it.gabaritoTexto == "true" || it.gabaritoTexto == "false" }
 
     fun criarPerguntaMultiplaEscolha(
         idUsuario: Int,

@@ -21,19 +21,11 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.appestudos.features.flashcards.viewmodel.FlashcardViewModel
 import com.example.appestudos.features.flashcards.model.PerguntaResponseApiModel
-import com.example.appestudos.features.flashcards.model.FlashcardGroup
 import com.example.appestudos.features.auth.data.UserManager
 import java.net.URLEncoder
 import java.net.URLDecoder
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.ui.draw.alpha
 import com.example.appestudos.ui.theme.LocalThemeManager
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -210,7 +202,6 @@ fun FlashcardGroupScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerguntaListItemComDelete(
     navController: NavController,
@@ -350,14 +341,4 @@ fun FlashcardDetailScreen(
             )
         }
     }
-}
-
-@Composable
-fun FlashcardGroupScreenPreview() {
-    FlashcardGroupScreen(
-        navController = rememberNavController(),
-        groupId = 1,
-        groupName = "Programação",
-        isPrivateParam = "public"
-    )
 }
