@@ -1,5 +1,7 @@
 # 📱 Question Quizz - Aplicativo Mobile  
-@D-Salge
+Este projeto foi desenvolvido com a valiosa colaboração de:
+-   [@D-Salge](https://github.com/D-Salge)
+-   [@vinicius-salge](https://github.com/vinicius-salge)
 ## 📌 Visão Geral  
 
 O **Question Quizz** é um aplicativo de aprendizado interativo desenvolvido em **Kotlin** com **Jetpack Compose** e **Spring Boot**, projetado para oferecer uma experiência moderna de quizzes educacionais.  
