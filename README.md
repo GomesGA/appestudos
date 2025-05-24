@@ -1,6 +1,9 @@
 # 📱 Question Quizz - Aplicativo Mobile  
 Este projeto foi desenvolvido com a valiosa colaboração de:
 -   [@D-Salge](https://github.com/D-Salge)
+-   [@Gemidio04](https://github.com/Gemidio04)
+-   [@salgeee](https://github.com/salgeee)
+-   [@sergio-rocha1](https://github.com/sergio-rocha1)
 -   [@vinicius-salge](https://github.com/vinicius-salge)
 ## 📌 Visão Geral  
 
